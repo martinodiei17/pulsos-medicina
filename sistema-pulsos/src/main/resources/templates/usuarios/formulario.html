@@ -10,6 +10,7 @@
 </head>
 <body class="bg-light">
 
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold" th:href="@{/turnos}">
@@ -29,66 +30,63 @@
                 <div class="card shadow-sm border-0 rounded-3">
                     <div class="card-header bg-white py-3 border-bottom">
                         <h4 class="card-title mb-0 text-primary fw-semibold" 
-                            th:text="${esEdicion} ? 'Editar Usuario' : 'Nuevo Usuario'">
+                            th:text="${esEdicion != null and esEdicion} ? 'Editar Usuario' : 'Nuevo Usuario'">
                             Usuario
                         </h4>
                     </div>
                     <div class="card-body p-4">
                         <form th:action="@{/usuarios/guardar}" method="post">
                             
-                            <input type="hidden" name="id" th:value="${usuario.id}" />
+                            <!-- ID -->
+                            <input type="hidden" name="id" th:value="${usuario?.id}" />
 
+                            <!-- Username -->
                             <div class="mb-3">
                                 <label for="username" class="form-label fw-semibold">Nombre de usuario</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-person"></i></span>
                                     <input type="text" class="form-control" id="username" name="username" 
-                                           th:value="${usuario.username}" required placeholder="Ej: jdoe">
+                                           th:value="${usuario?.username}" required placeholder="Ej: jdoe">
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="nombre" class="form-label fw-semibold">Nombre y Apellido</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-card-text"></i></span>
-                                    <input type="text" class="form-control" id="nombre" name="nombre" 
-                                           th:value="${usuario.nombre}" placeholder="Ej: Juan Pérez">
-                                </div>
-                            </div>
-
+                            <!-- Contraseña -->
                             <div class="mb-3">
                                 <label for="passwordPlana" class="form-label fw-semibold">Contraseña</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-key"></i></span>
                                     <input type="password" class="form-control" id="passwordPlana" name="passwordPlana" 
-                                           th:required="${!esEdicion}" placeholder="Ingresa la clave">
+                                           th:required="${esEdicion == null or !esEdicion}" placeholder="Ingresa la clave">
                                 </div>
-                                <small class="text-muted" th:if="${esEdicion}">
-                                    Dejar en blanco para conservar la contraseña actual.
+                                <small class="text-muted" th:if="${esEdicion != null and esEdicion}">
+                                    Dejar en blanco si deseas conservar la contraseña actual.
                                 </small>
                             </div>
 
+                            <!-- Rol -->
                             <div class="mb-3">
                                 <label for="rol" class="form-label fw-semibold">Rol del Sistema</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
                                     <select class="form-select" id="rol" name="rol" required>
-                                        <option value="" disabled th:selected="${usuario.rol == null}">Selecciona un rol...</option>
+                                        <option value="" disabled th:selected="${usuario?.rol == null}">Selecciona un rol...</option>
                                         <option th:each="r : ${todosLosRoles}" 
                                                 th:value="${r}" 
                                                 th:text="${r}"
-                                                th:selected="${usuario.rol != null and usuario.rol == r}">
+                                                th:selected="${usuario?.rol != null and usuario?.rol == r}">
                                         </option>
                                     </select>
                                 </div>
                             </div>
 
+                            <!-- Activo -->
                             <div class="mb-4 form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="activo" name="activo" 
-                                       th:checked="${usuario.activo != null ? usuario.activo : true}">
+                                       th:checked="${usuario?.activo != null ? usuario.activo : true}">
                                 <label class="form-check-label fw-semibold" for="activo">Usuario activo</label>
                             </div>
 
+                            <!-- Botones -->
                             <div class="d-flex justify-content-between pt-3 border-top">
                                 <a th:href="@{/usuarios}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-left me-1"></i>Volver
