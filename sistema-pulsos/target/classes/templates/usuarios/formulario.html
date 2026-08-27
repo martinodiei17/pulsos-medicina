@@ -1,49 +1,30 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${esEdicion} ? 'Editar Usuario - Pulsos Medicina' : 'Nuevo Usuario - Pulsos Medicina'">Usuario - Pulsos Medicina</title>
+    <title>Usuario - Pulsos Medicina</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body class="bg-light">
 
-    <!-- Navbar Principal -->
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold" th:href="@{/turnos}">
                 <i class="bi bi-heart-pulse-fill me-2"></i>Pulsos Medicina
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/turnos}"><i class="bi bi-calendar-check me-1"></i>Turnos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/pacientes}"><i class="bi bi-people me-1"></i>Pacientes</a>
-                    </li>
-                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                        <a class="nav-link active" th:href="@{/usuarios}"><i class="bi bi-person-gear me-1"></i>Usuarios</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center gap-3">
-                    <span class="text-white" sec:authentication="name">Usuario</span>
-                    <form th:action="@{/logout}" method="post" class="m-0">
-                        <button type="submit" class="btn btn-outline-light btn-sm">
-                            <i class="bi bi-box-arrow-right me-1"></i>Salir
-                        </button>
-                    </form>
-                </div>
+            <div class="d-flex">
+                <a th:href="@{/usuarios}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-people me-1"></i>Volver a Usuarios
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- Contenedor del Formulario -->
+    <!-- Formulario -->
     <main class="container py-3">
         <div class="row justify-content-center">
             <div class="col-lg-6 col-md-8">
@@ -55,17 +36,18 @@
                         </h4>
                     </div>
                     <div class="card-body p-4">
-                        <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post">
+                        <form th:action="@{/usuarios/guardar}" method="post">
                             
                             <!-- ID oculto -->
-                            <input type="hidden" th:field="*{id}" />
+                            <input type="hidden" name="id" th:value="${usuario.id}" />
 
                             <!-- Username -->
                             <div class="mb-3">
                                 <label for="username" class="form-label fw-semibold">Nombre de usuario</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                    <input type="text" class="form-control" id="username" th:field="*{username}" required placeholder="Ej: jdoe">
+                                    <input type="text" class="form-control" id="username" name="username" 
+                                           th:value="${usuario.username}" required placeholder="Ej: jdoe">
                                 </div>
                             </div>
 
@@ -74,11 +56,12 @@
                                 <label for="nombre" class="form-label fw-semibold">Nombre y Apellido</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-card-text"></i></span>
-                                    <input type="text" class="form-control" id="nombre" th:field="*{nombre}" placeholder="Ej: Juan Pérez">
+                                    <input type="text" class="form-control" id="nombre" name="nombre" 
+                                           th:value="${usuario.nombre}" placeholder="Ej: Juan Pérez">
                                 </div>
                             </div>
 
-                            <!-- Contraseña Plana -->
+                            <!-- Contraseña -->
                             <div class="mb-3">
                                 <label for="passwordPlana" class="form-label fw-semibold">Contraseña</label>
                                 <div class="input-group">
@@ -91,23 +74,26 @@
                                 </small>
                             </div>
 
-                            <!-- Rol (Enum) -->
+                            <!-- Rol -->
                             <div class="mb-3">
                                 <label for="rol" class="form-label fw-semibold">Rol del Sistema</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                                    <select class="form-select" id="rol" th:field="*{rol}" required>
-                                        <option value="" disabled selected>Selecciona un rol...</option>
+                                    <select class="form-select" id="rol" name="rol" required>
+                                        <option value="" disabled th:selected="${usuario.rol == null}">Selecciona un rol...</option>
                                         <option th:each="r : ${todosLosRoles}" 
                                                 th:value="${r}" 
-                                                th:text="${r}">ADMIN</option>
+                                                th:text="${r}"
+                                                th:selected="${usuario.rol != null and usuario.rol == r}">
+                                        </option>
                                     </select>
                                 </div>
                             </div>
 
                             <!-- Estado Activo -->
                             <div class="mb-4 form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="activo" th:field="*{activo}">
+                                <input class="form-check-input" type="checkbox" id="activo" name="activo" 
+                                       th:checked="${usuario.activo != null ? usuario.activo : true}">
                                 <label class="form-check-label fw-semibold" for="activo">Usuario activo</label>
                             </div>
 
