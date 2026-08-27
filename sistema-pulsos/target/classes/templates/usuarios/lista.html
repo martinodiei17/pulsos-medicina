@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipo Profesional & Usuarios | Pulsos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --verde-primario: #485A48;
+            --verde-hover: #364436;
+            --verde-tenue: #EEF2EE;
+            --crema-fondo: #FAF7F5;
+            --blanco: #FFFFFF;
+            --arena-linea: #E3DDD8;
+            --dorado-acento: #A08C75;
+            --texto-oscuro: #2D342D;
+            --texto-secundario: #6C756C;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--crema-fondo);
+            color: var(--texto-oscuro);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--blanco);
+            border-bottom: 1px solid var(--arena-linea);
+            padding: 18px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            letter-spacing: 5px;
+            color: var(--verde-primario);
+            font-weight: 600;
+        }
+
+        .brand span {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--dorado-acento);
+            display: block;
+        }
+
+        nav a {
+            color: var(--texto-oscuro);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 25px;
+            padding-bottom: 4px;
+        }
+
+        nav a.active {
+            color: var(--verde-primario);
+            border-bottom: 2px solid var(--verde-primario);
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 450px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 11px 16px;
+            border: 1px solid var(--arena-linea);
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            background: var(--blanco);
+            outline: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--verde-primario);
+            color: #fff;
+            padding: 11px 22px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover { background-color: var(--verde-hover); }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--verde-primario);
+            border: 1px solid var(--verde-primario);
+        }
+
+        .btn-outline:hover { background-color: var(--verde-tenue); }
+
+        .card-table {
+            background: var(--blanco);
+            border-radius: 8px;
+            border: 1px solid var(--arena-linea);
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #F5F1ED;
+            padding: 16px 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--texto-secundario);
+            font-weight: 600;
+            border-bottom: 1px solid var(--arena-linea);
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #F0ECE8;
+            font-size: 0.9rem;
+        }
+
+        tr:hover td { background-color: #FAF8F6; }
+
+        .badge-rol {
+            background-color: #E8EEF5;
+            color: #2D5882;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-right: 4px;
+            margin-bottom: 2px;
+        }
+
+        .badge-activo {
+            background-color: #E4F7EB;
+            color: #2D7A4D;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .badge-inactivo {
+            background-color: #F7E4E4;
+            color: #8A2020;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <h1>P U L S O S</h1>
+        <span>Medicina & Bienestar</span>
+    </div>
+    <nav>
+        <a href="/turnos">Agenda de Turnos</a>
+        <a href="/pacientes">Pacientes & Historias</a>
+        <a href="/usuarios" class="active" sec:authorize="hasRole('ROLE_ADMIN')">👥 Profesionales / Usuarios</a>
+    </nav>
+    <div style="font-size: 0.8rem; display: flex; align-items: center; gap: 15px;">
+        <span>Usuario: <strong sec:authentication="name">Admin</strong></span>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.7rem;">Salir</button>
+        </form>
+    </div>
+</header>
+
+<div class="container">
+    <div class="top-bar">
+        <form th:action="@{/usuarios}" method="get" class="search-box">
+            <input type="text" name="q" th:value="${busqueda}" placeholder="Buscar por Nombre, Usuario o Especialidad...">
+            <button type="submit" class="btn btn-outline">Buscar</button>
+        </form>
+        <a href="/usuarios/nuevo" class="btn">+ Nuevo Profesional / Usuario</a>
+    </div>
+
+    <div class="card-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Profesional / Nombre</th>
+                    <th>Usuario (Login)</th>
+                    <th>Especialidad & Matrícula</th>
+                    <th>Roles Asignados</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="u : ${usuarios}">
+                    <td>
+                        <strong style="color: var(--verde-primario);" th:text="${u.nombreCompleto}">Nombre Completo</strong>
+                        <div style="font-size: 0.75rem; color: var(--texto-secundario);" th:text="${u.email}">email@pulsos.com</div>
+                    </td>
+                    <td>
+                        <code style="background: #F0ECE8; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;" th:text="${u.username}">usuario</code>
+                    </td>
+                    <td>
+                        <div th:text="${u.especialidad != null && !u.especialidad.isEmpty() ? u.especialidad : 'General / Administrativo'}">Especialidad</div>
+                        <div style="font-size: 0.75rem; color: var(--texto-secundario);" th:text="${u.matricula}">MN 12345</div>
+                    </td>
+                    <td>
+                        <span th:each="r : ${u.roles}" class="badge-rol" th:text="${r.descripcion}">ROL</span>
+                    </td>
+                    <td>
+                        <span th:if="${u.activo}" class="badge-activo">Activo</span>
+                        <span th:if="${!u.activo}" class="badge-inactivo">Inactivo</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">✏️ Editar</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(usuarios)}">
+                    <td colspan="6" style="text-align: center; padding: 50px; color: var(--texto-secundario);">
+                        No se encontraron usuarios o profesionales.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
