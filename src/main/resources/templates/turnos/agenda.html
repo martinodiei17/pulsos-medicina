@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda & Turnos | Pulsos - Medicina & Bienestar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --verde-primario: #485A48;
+            --verde-hover: #364436;
+            --verde-tenue: #EEF2EE;
+            --crema-fondo: #FAF7F5;
+            --blanco: #FFFFFF;
+            --arena-linea: #E3DDD8;
+            --dorado-acento: #A08C75;
+            --texto-oscuro: #2D342D;
+            --texto-secundario: #6C756C;
+            --azul-espera: #2E5B82;
+            --verde-ok: #2D7A4D;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--crema-fondo);
+            color: var(--texto-oscuro);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--blanco);
+            border-bottom: 1px solid var(--arena-linea);
+            padding: 18px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            letter-spacing: 5px;
+            color: var(--verde-primario);
+            font-weight: 600;
+        }
+
+        .brand span {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--dorado-acento);
+            display: block;
+        }
+
+        nav a {
+            color: var(--texto-oscuro);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 25px;
+            padding-bottom: 4px;
+        }
+
+        nav a.active {
+            color: var(--verde-primario);
+            border-bottom: 2px solid var(--verde-primario);
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 35px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 25px;
+        }
+
+        .panel {
+            background: var(--blanco);
+            border-radius: 8px;
+            border: 1px solid var(--arena-linea);
+            padding: 26px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            margin-bottom: 25px;
+        }
+
+        .panel-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: var(--verde-primario);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--arena-linea);
+            padding-bottom: 8px;
+        }
+
+        .sync-box {
+            background: #F4F6F4;
+            border: 1px dashed var(--verde-primario);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--verde-primario);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover { background-color: var(--verde-hover); }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--verde-primario);
+            border: 1px solid var(--verde-primario);
+        }
+
+        .btn-outline:hover { background-color: var(--verde-tenue); }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--arena-linea);
+            border-radius: 5px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            background: #FAFAFA;
+        }
+
+        label {
+            display: block;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            color: var(--texto-secundario);
+            margin-bottom: 5px;
+        }
+
+        .turno-card {
+            border-left: 4px solid var(--verde-primario);
+            background: #FAF9F8;
+            padding: 16px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .badge-estado {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .estado-espera { background: #E4EEF7; color: var(--azul-espera); }
+        .estado-pendiente { background: #F7EFE4; color: #8A5F20; }
+        .estado-atendido { background: #E4F7EB; color: var(--verde-ok); }
+        .estado-cancelado { background: #F7E4E4; color: #8A2020; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <h1>P U L S O S</h1>
+        <span>Medicina & Bienestar</span>
+    </div>
+    <nav>
+        <a href="/turnos" class="active">Agenda de Turnos</a>
+        <a href="/pacientes">Pacientes & Historias</a>
+        <a href="/usuarios" sec:authorize="hasRole('ROLE_ADMIN')">👥 Profesionales / Usuarios</a>
+    </nav>
+    <div style="font-size: 0.8rem; display: flex; align-items: center; gap: 15px;">
+        <span>Usuario: <strong sec:authentication="name">Dr.</strong></span>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.7rem;">Salir</button>
+        </form>
+    </div>
+</header>
+
+<div class="container">
+    <div>
+        <div class="panel">
+            <h2 class="panel-title">Agendar Turno</h2>
+            <form th:action="@{/turnos/agendar}" th:object="${nuevoTurno}" method="post">
+                <label>Paciente *</label>
+                <select name="pacienteId" required>
+                    <option value="">Seleccione Paciente...</option>
+                    <option th:each="p : ${pacientes}" th:value="${p.id}" th:text="${p.nombreCompleto + ' (DNI ' + p.dni + ')'}"></option>
+                </select>
+
+                <label>Médico Especialista *</label>
+                <select th:field="*{medicoAsignado}" required>
+                    <option value="">Seleccione Profesional...</option>
+                    <option th:each="m : ${medicos}" th:value="${m.nombreCompleto}" th:text="${m.nombreCompleto + ' (' + m.especialidad + ')'}"></option>
+                </select>
+
+                <label>Fecha y Hora *</label>
+                <input type="datetime-local" th:field="*{fechaHora}" required>
+
+                <label>Motivo de la Cita</label>
+                <input type="text" th:field="*{motivo}" placeholder="Ej. Chequeo semestral, dolor articular...">
+
+                <button type="submit" class="btn" style="width: 100%;">Confirmar Turno</button>
+            </form>
+        </div>
+
+        <div class="panel sync-box" sec:authorize="hasRole('ROLE_MEDICO')">
+            <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--verde-primario); margin-bottom: 8px;">
+                📅 Sincronizar tu Calendario
+            </h3>
+            <p style="font-size: 0.78rem; color: var(--texto-secundario); margin-bottom: 12px; line-height: 1.4;">
+                Conecta tu agenda directamente con <b>Google Calendar, iPhone o Outlook</b> para recibir recordatorios en tu celular.
+            </p>
+
+            <a th:if="${usuarioActual != null}"
+               th:href="@{/api/calendario/medico/{id}/turnos.ics(id=${usuarioActual.username})}" 
+               class="btn btn-outline" style="width: 100%; font-size: 0.75rem; text-align: center; margin-bottom: 8px;">
+               📲 Descargar Feed iCal (.ics)
+            </a>
+
+            <div style="font-size: 0.72rem; color: var(--texto-secundario); background: #FFF; padding: 8px; border-radius: 4px; border: 1px solid var(--arena-linea);">
+              
+                <span style="word-break: break-all; color: var(--verde-primario);" 
+                      
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="panel">
+            <h2 class="panel-title">Turnos Programados</h2>
+            <div th:each="t : ${turnos}" class="turno-card">
+                <div>
+                    <div style="font-size: 0.78rem; color: var(--dorado-acento); font-weight: 600;" 
+                         th:text="${#temporals.format(t.fechaHora, 'EEEE dd/MM/yyyy - HH:mm')} + ' hs'">Fecha</div>
+                    <div style="font-size: 1.05rem; font-weight: 600; color: var(--verde-primario);" th:text="${t.paciente.nombreCompleto}">Paciente</div>
+                    <div style="font-size: 0.82rem; color: var(--texto-secundario);">
+                        Médico: <strong th:text="${t.medicoAsignado}">Dr.</strong> | Motivo: <span th:text="${t.motivo}">Consulta</span>
+                    </div>
+                </div>
+
+                <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                    <div>
+                        <span th:class="'badge-estado ' + (${t.estado == 'EN_SALA_DE_ESPERA'} ? 'estado-espera' : (${t.estado == 'ATENDIDO'} ? 'estado-atendido' : (${t.estado == 'CANCELADO'} ? 'estado-cancelado' : 'estado-pendiente')))"
+                              th:text="${t.estado}">ESTADO</span>
+                    </div>
+
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <a th:href="'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Cita+Pulsos:+' + ${t.paciente.nombreCompleto} + '&details=Motivo:+' + ${t.motivo} + '+-+Tel:+' + ${t.paciente.telefono} + '&location=Pulsos+Medicina+%26+Bienestar&dates=' + ${#temporals.format(t.fechaHora, 'yyyyMMdd''T''HHmmss')} + '/' + ${#temporals.format(t.fechaHora.plusMinutes(45), 'yyyyMMdd''T''HHmmss')}"
+                           target="_blank" 
+                           class="btn btn-outline" 
+                           style="padding: 4px 8px; font-size: 0.72rem; background: #FFF;" 
+                           title="Agregar este turno específico a Google Calendar">
+                           🗓️ Google Cal
+                        </a>
+
+                        <form th:action="@{/turnos/{id}/estado(id=${t.id})}" method="post" style="display:inline;">
+                            <select name="estado" onchange="this.form.submit()" style="padding: 4px 8px; font-size: 0.72rem; width: auto; margin-bottom: 0;">
+                                <option value="PENDIENTE" th:selected="${t.estado == 'PENDIENTE'}">Pendiente</option>
+                                <option value="EN_SALA_DE_ESPERA" th:selected="${t.estado == 'EN_SALA_DE_ESPERA'}">En Sala de Espera</option>
+                                <option value="ATENDIDO" th:selected="${t.estado == 'ATENDIDO'}">Atendido</option>
+                                <option value="CANCELADO" th:selected="${t.estado == 'CANCELADO'}">Cancelado</option>
+                            </select>
+                        </form>
+
+                        <a th:href="@{/pacientes/{id}(id=${t.paciente.id})}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.72rem;">Abrir Historia</a>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(turnos)}" style="text-align: center; color: var(--texto-secundario); padding: 40px;">
+                No hay turnos registrados en la agenda.
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

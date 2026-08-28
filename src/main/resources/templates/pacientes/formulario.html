@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${esEdicion} ? 'Modificar Paciente | Pulsos' : 'Nuevo Paciente | Pulsos'">Gestión de Paciente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --verde-primario: #485A48;
+            --verde-hover: #364436;
+            --crema-fondo: #FAF7F5;
+            --blanco: #FFFFFF;
+            --arena-linea: #E3DDD8;
+            --dorado-acento: #A08C75;
+            --texto-oscuro: #2D342D;
+            --texto-secundario: #6C756C;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--crema-fondo);
+            color: var(--texto-oscuro);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--blanco);
+            border-bottom: 1px solid var(--arena-linea);
+            padding: 18px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            letter-spacing: 5px;
+            color: var(--verde-primario);
+        }
+
+        .brand span {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--dorado-acento);
+            display: block;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .panel {
+            background: var(--blanco);
+            border-radius: 8px;
+            border: 1px solid var(--arena-linea);
+            padding: 35px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        .panel-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--verde-primario);
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--arena-linea);
+            padding-bottom: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group.full-width { grid-column: span 2; }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            color: var(--texto-secundario);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], input[type="date"], input[type="email"], select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--arena-linea);
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            background: #FAFAFA;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--verde-primario);
+            background: #FFF;
+        }
+
+        .btn {
+            background-color: var(--verde-primario);
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn:hover { background-color: var(--verde-hover); }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--verde-primario);
+            border: 1px solid var(--verde-primario);
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <h1>P U L S O S</h1>
+        <span>Medicina & Bienestar</span>
+    </div>
+    <a th:href="${esEdicion} ? @{/pacientes/{id}(id=${paciente.id})} : @{/pacientes}" class="btn btn-outline">Cancelar</a>
+</header>
+
+<div class="container">
+    <div class="panel">
+        <h2 class="panel-title" th:text="${esEdicion} ? 'Modificar Información del Paciente' : 'Alta de Nuevo Paciente'">Gestión de Paciente</h2>
+        <form th:action="@{/pacientes/guardar}" th:object="${paciente}" method="post">
+            <input type="hidden" th:field="*{id}">
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Nombre y Apellido Completo *</label>
+                    <input type="text" th:field="*{nombreCompleto}" required placeholder="Ej. Camila Morales">
+                </div>
+
+                <div class="form-group">
+                    <label>DNI / Identificación *</label>
+                    <input type="text" th:field="*{dni}" required placeholder="Ej. 35.890.123">
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" th:field="*{fechaNacimiento}">
+                </div>
+
+                <div class="form-group">
+                    <label>Teléfono de Contacto</label>
+                    <input type="text" th:field="*{telefono}" placeholder="+54 9 11 ...">
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" th:field="*{email}" placeholder="paciente@ejemplo.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Obra Social / Prepaga</label>
+                    <input type="text" th:field="*{obraSocial}" placeholder="Ej. OSDE, Swiss Medical, Particular">
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Afiliado</label>
+                    <input type="text" th:field="*{numeroAfiliado}" placeholder="Ej. 310-482910-02">
+                </div>
+
+                <div class="form-group">
+                    <label>Grupo Sanguíneo</label>
+                    <input type="text" th:field="*{grupoSanguineo}" placeholder="Ej. 0+, A+, B-, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label>Alergias o Contraindicaciones</label>
+                    <input type="text" th:field="*{alergias}" placeholder="Ej. Penicilina, Látex, Ninguna">
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Antecedentes Médicos / Quirúrgicos</label>
+                    <textarea th:field="*{antecedentesMedicos}" rows="4" placeholder="Cirugías previas, patologías crónicas, medicación habitual..."></textarea>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 15px;">
+                <a th:href="${esEdicion} ? @{/pacientes/{id}(id=${paciente.id})} : @{/pacientes}" class="btn btn-outline">Volver</a>
+                <button type="submit" class="btn" th:text="${esEdicion} ? 'Guardar Cambios' : 'Registrar Paciente'">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
