@@ -63,17 +63,16 @@
                                 </small>
                             </div>
 
-                            <!-- Rol -->
+                            <!-- Rol (Opciones estándar del enum) -->
                             <div class="mb-3">
                                 <label for="rol" class="form-label fw-semibold">Rol del Sistema</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
                                     <select class="form-select" id="rol" name="rol" required>
-                                        <option value="" disabled th:selected="${usuario?.rol == null}">Selecciona un rol...</option>
+                                        <option value="" disabled selected>Selecciona un rol...</option>
                                         <option th:each="r : ${todosLosRoles}" 
                                                 th:value="${r}" 
-                                                th:text="${r}"
-                                                th:selected="${usuario?.rol != null and usuario?.rol == r}">
+                                                th:text="${r}">
                                         </option>
                                     </select>
                                 </div>
