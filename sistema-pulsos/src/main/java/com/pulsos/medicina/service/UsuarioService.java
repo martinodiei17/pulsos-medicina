@@ -35,6 +35,10 @@ public class UsuarioService {
         return usuarioRepository.findById(id);
     }
 
+    public Optional<Usuario> buscarPorUsername(String username) {
+        return usuarioRepository.findByUsername(username);
+    }
+
     @Transactional
     public void guardarOActualizar(Usuario usuario, String passwordPlana) {
         if (usuario.getId() != null) {
@@ -46,8 +50,8 @@ public class UsuarioService {
             usuarioExistente.setEmail(usuario.getEmail());
             usuarioExistente.setEspecialidad(usuario.getEspecialidad());
             usuarioExistente.setMatricula(usuario.getMatricula());
-            usuarioExistente.setRoles(usuario.getRoles());
-            usuarioExistente.setActivo(usuario.isActivo());
+            usuarioExistente.setRol(usuario.getRol());
+            usuarioExistente.setActivo(usuario.getActivo());
 
             if (passwordPlana != null && !passwordPlana.trim().isEmpty()) {
                 usuarioExistente.setPassword(passwordEncoder.encode(passwordPlana));
