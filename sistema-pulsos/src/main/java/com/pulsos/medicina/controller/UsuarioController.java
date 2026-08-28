@@ -49,7 +49,7 @@ public class UsuarioController {
         usuarioService.guardarOActualizar(usuario, passwordPlana);
         return "redirect:/usuarios";
     }
-   
+
     @PostMapping("/eliminar/{id}")
     public String eliminar(@PathVariable Long id) {
         usuarioService.eliminar(id);
