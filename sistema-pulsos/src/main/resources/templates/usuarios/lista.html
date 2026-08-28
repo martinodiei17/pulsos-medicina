@@ -17,6 +17,7 @@
             --texto-oscuro: #2D342D;
             --texto-secundario: #6C756C;
             --rojo-peligro: #B33A3A;
+            --rojo-tenue: #FDF2F2;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -275,7 +276,7 @@
                         <div style="font-size: 0.75rem; color: var(--texto-secundario);" th:text="${u.matricula}">MN 12345</div>
                     </td>
                     <td>
-                        <span th:each="r : ${u.roles}" class="badge-rol" th:text="${r.descripcion != null ? r.descripcion : r}">ROL</span>
+                        <span th:each="r : ${u.roles}" class="badge-rol" th:text="${r.descripcion}">ROL</span>
                     </td>
                     <td>
                         <span th:if="${u.activo}" class="badge-activo">Activo</span>

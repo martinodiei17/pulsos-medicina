@@ -238,31 +238,31 @@
                 <!-- Nombre Completo -->
                 <div class="form-group full-width">
                     <label for="nombreCompleto">Nombre y Apellido / Profesional</label>
-                    <input type="text" id="nombreCompleto" name="nombreCompleto" th:value="${usuario?.nombreCompleto}" required placeholder="Ej: Dr. Santiago Albarracín">
+                    <input type="text" id="nombreCompleto" name="nombreCompleto" th:value="${usuario?.nombreCompleto}" required placeholder="Ej: Dr. Juan Pérez">
                 </div>
 
                 <!-- Usuario Login -->
                 <div class="form-group">
                     <label for="username">Usuario (Login)</label>
-                    <input type="text" id="username" name="username" th:value="${usuario?.username}" required placeholder="Ej: dr.santiago">
+                    <input type="text" id="username" name="username" th:value="${usuario?.username}" required placeholder="Ej: jperez">
                 </div>
 
                 <!-- Email -->
                 <div class="form-group">
                     <label for="email">Correo Electrónico</label>
-                    <input type="email" id="email" name="email" th:value="${usuario?.email}" placeholder="correo@pulsosmedicina.com.ar">
+                    <input type="email" id="email" name="email" th:value="${usuario?.email}" placeholder="correo@pulsos.com">
                 </div>
 
                 <!-- Especialidad -->
                 <div class="form-group">
                     <label for="especialidad">Especialidad</label>
-                    <input type="text" id="especialidad" name="especialidad" th:value="${usuario?.especialidad}" placeholder="Ej: Cardiología & Deportología">
+                    <input type="text" id="especialidad" name="especialidad" th:value="${usuario?.especialidad}" placeholder="Ej: Cardiología, Clínica">
                 </div>
 
                 <!-- Matrícula -->
                 <div class="form-group">
                     <label for="matricula">Matrícula</label>
-                    <input type="text" id="matricula" name="matricula" th:value="${usuario?.matricula}" placeholder="Ej: MN 122.450">
+                    <input type="text" id="matricula" name="matricula" th:value="${usuario?.matricula}" placeholder="Ej: MN 12345">
                 </div>
 
                 <!-- Contraseña -->
@@ -272,14 +272,14 @@
                     <span class="helper-text" th:if="${esEdicion != null and esEdicion}">Dejar en blanco para conservar la actual.</span>
                 </div>
 
-                <!-- Roles -->
+                <!-- Rol -->
                 <div class="form-group">
-                    <label for="roles">Rol Asignado</label>
-                    <select id="roles" name="roles" required multiple size="3" style="height: auto;">
+                    <label for="rol">Rol Asignado</label>
+                    <select id="rol" name="rol" required>
+                        <option value="" disabled selected>Selecciona un rol...</option>
                         <option th:each="r : ${todosLosRoles}" 
                                 th:value="${r}" 
-                                th:text="${r.descripcion != null ? r.descripcion : r}"
-                                th:selected="${usuario?.roles != null and usuario.roles.contains(r)}">
+                                th:text="${r}">
                         </option>
                     </select>
                 </div>
