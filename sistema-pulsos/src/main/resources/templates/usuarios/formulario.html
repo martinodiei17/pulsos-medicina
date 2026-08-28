@@ -10,20 +10,46 @@
 </head>
 <body class="bg-light">
 
-    <!-- Navbar -->
+    <!-- Navbar idéntico al resto del sistema -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold" th:href="@{/turnos}">
                 <i class="bi bi-heart-pulse-fill me-2"></i>Pulsos Medicina
             </a>
-            <div class="d-flex">
-                <a th:href="@{/usuarios}" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-people me-1"></i>Volver a Usuarios
-                </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/turnos}">
+                            <i class="bi bi-calendar-check me-1"></i>Turnos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/pacientes}">
+                            <i class="bi bi-people me-1"></i>Pacientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/usuarios}">
+                            <i class="bi bi-person-gear me-1"></i>Usuarios
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-white small" th:text="${#authentication != null ? #authentication.name : ''}"></span>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-box-arrow-right me-1"></i>Salir
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </nav>
 
+    <!-- Contenedor del Formulario -->
     <main class="container py-3">
         <div class="row justify-content-center">
             <div class="col-lg-6 col-md-8">
@@ -37,7 +63,7 @@
                     <div class="card-body p-4">
                         <form th:action="@{/usuarios/guardar}" method="post">
                             
-                            <!-- ID -->
+                            <!-- ID oculto -->
                             <input type="hidden" name="id" th:value="${usuario?.id}" />
 
                             <!-- Username -->
@@ -63,7 +89,7 @@
                                 </small>
                             </div>
 
-                            <!-- Rol (Opciones estándar del enum) -->
+                            <!-- Rol -->
                             <div class="mb-3">
                                 <label for="rol" class="form-label fw-semibold">Rol del Sistema</label>
                                 <div class="input-group">
@@ -85,7 +111,7 @@
                                 <label class="form-check-label fw-semibold" for="activo">Usuario activo</label>
                             </div>
 
-                            <!-- Botones -->
+                            <!-- Acciones -->
                             <div class="d-flex justify-content-between pt-3 border-top">
                                 <a th:href="@{/usuarios}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-left me-1"></i>Volver
