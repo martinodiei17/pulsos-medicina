@@ -1,64 +1,87 @@
-package com.pulsos.medicina.controller;
+package com.pulsos.medicina.service;
 
 import com.pulsos.medicina.model.Rol;
 import com.pulsos.medicina.model.Usuario;
-import com.pulsos.medicina.service.UsuarioService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import com.pulsos.medicina.repository.UsuarioRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@Controller
-@RequestMapping("/usuarios")
-public class UsuarioController {
+import java.util.List;
+import java.util.Optional;
 
-    private final UsuarioService usuarioService;
+@Service
+public class UsuarioService {
 
-    public UsuarioController(UsuarioService usuarioService) {
-        this.usuarioService = usuarioService;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    @GetMapping
-    public String index(@RequestParam(value = "q", required = false) String q, Model model) {
-        model.addAttribute("usuarios", usuarioService.listarTodos(q));
-        model.addAttribute("busqueda", q);
-        return "usuarios/lista";
+    public List<Usuario> listarTodos(String q) {
+        if (q != null && !q.trim().isEmpty()) {
+            return usuarioRepository.findAll().stream()
+                    .filter(u -> (u.getNombreCompleto() != null && u.getNombreCompleto().toLowerCase().contains(q.toLowerCase()))
+                            || (u.getUsername() != null && u.getUsername().toLowerCase().contains(q.toLowerCase()))
+                            || (u.getEspecialidad() != null && u.getEspecialidad().toLowerCase().contains(q.toLowerCase())))
+                    .toList();
+        }
+        return usuarioRepository.findAll();
     }
 
-    @GetMapping("/nuevo")
-    public String formularioNuevo(Model model) {
-        Usuario usuario = new Usuario();
-        usuario.setActivo(true);
-        model.addAttribute("usuario", usuario);
-        model.addAttribute("todosLosRoles", Rol.values());
-        model.addAttribute("esEdicion", false);
-        return "usuarios/formulario";
+    public List<Usuario> listarMedicos() {
+        return usuarioRepository.findAll().stream()
+                .filter(u -> u.isActivo() && u.getRoles() != null && u.getRoles().contains(Rol.MEDICO))
+                .toList();
     }
 
-    @GetMapping("/editar/{id}")
-    public String formularioEditar(@PathVariable Long id, Model model) {
-        Usuario usuario = usuarioService.buscarPorId(id)
+    public Optional<Usuario> buscarPorId(Long id) {
+        return usuarioRepository.findById(id);
+    }
+
+    public Optional<Usuario> buscarPorUsername(String username) {
+        return usuarioRepository.findByUsername(username);
+    }
+
+    @Transactional
+    public void guardarOActualizar(Usuario usuario, String passwordPlana) {
+        if (usuario.getId() != null) {
+            Usuario usuarioExistente = usuarioRepository.findById(usuario.getId())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+            usuarioExistente.setNombreCompleto(usuario.getNombreCompleto());
+            usuarioExistente.setUsername(usuario.getUsername());
+            usuarioExistente.setEmail(usuario.getEmail());
+            usuarioExistente.setEspecialidad(usuario.getEspecialidad());
+            usuarioExistente.setMatricula(usuario.getMatricula());
+            usuarioExistente.setRoles(usuario.getRoles());
+            usuarioExistente.setActivo(usuario.isActivo());
+
+            if (passwordPlana != null && !passwordPlana.trim().isEmpty()) {
+                usuarioExistente.setPassword(passwordEncoder.encode(passwordPlana));
+            }
+            usuarioRepository.save(usuarioExistente);
+        } else {
+            if (passwordPlana != null && !passwordPlana.trim().isEmpty()) {
+                usuario.setPassword(passwordEncoder.encode(passwordPlana));
+            }
+            usuarioRepository.save(usuario);
+        }
+    }
+
+    @Transactional
+    public void cambiarEstado(Long id, boolean activo) {
+        Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        model.addAttribute("usuario", usuario);
-        model.addAttribute("todosLosRoles", Rol.values());
-        model.addAttribute("esEdicion", true);
-        return "usuarios/formulario";
+        usuario.setActivo(activo);
+        usuarioRepository.save(usuario);
     }
 
-    @PostMapping("/guardar")
-    public String guardar(@ModelAttribute Usuario usuario, @RequestParam(value = "passwordPlana", required = false) String passwordPlana) {
-        usuarioService.guardarOActualizar(usuario, passwordPlana);
-        return "redirect:/usuarios";
-    }
-
-    @PostMapping("/eliminar/{id}")
-    public String eliminar(@PathVariable Long id) {
-        usuarioService.eliminar(id);
-        return "redirect:/usuarios";
-    }
-
-    @PostMapping("/{id}/estado")
-    public String cambiarEstado(@PathVariable Long id, @RequestParam("activo") boolean activo) {
-        usuarioService.cambiarEstado(id, activo);
-        return "redirect:/usuarios";
+    @Transactional
+    public void eliminar(Long id) {
+        usuarioRepository.deleteById(id);
     }
 }
