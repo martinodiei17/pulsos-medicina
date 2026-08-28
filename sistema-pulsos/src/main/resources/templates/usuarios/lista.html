@@ -16,6 +16,8 @@
             --dorado-acento: #A08C75;
             --texto-oscuro: #2D342D;
             --texto-secundario: #6C756C;
+            --rojo-peligro: #B33A3A;
+            --rojo-tenue: #FDF2F2;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,6 +131,25 @@
 
         .btn-outline:hover { background-color: var(--verde-tenue); }
 
+        .btn-danger-outline {
+            background-color: transparent;
+            color: var(--rojo-peligro);
+            border: 1px solid var(--rojo-peligro);
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-danger-outline:hover {
+            background-color: var(--rojo-peligro);
+            color: #fff;
+        }
+
         .card-table {
             background: var(--blanco);
             border-radius: 8px;
@@ -158,6 +179,7 @@
             padding: 18px 20px;
             border-bottom: 1px solid #F0ECE8;
             font-size: 0.9rem;
+            vertical-align: middle;
         }
 
         tr:hover td { background-color: #FAF8F6; }
@@ -190,6 +212,12 @@
             border-radius: 20px;
             font-size: 0.72rem;
             font-weight: 600;
+        }
+
+        .acciones-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
     </style>
 </head>
@@ -255,7 +283,12 @@
                         <span th:if="${!u.activo}" class="badge-inactivo">Inactivo</span>
                     </td>
                     <td>
-                        <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">✏️ Editar</a>
+                        <div class="acciones-container">
+                            <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">✏️ EDITAR</a>
+                            <form th:action="@{/usuarios/eliminar/{id}(id=${u.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este profesional/usuario?');">
+                                <button type="submit" class="btn-danger-outline">🗑️ ELIMINAR</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(usuarios)}">
