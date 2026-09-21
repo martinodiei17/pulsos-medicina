@@ -240,16 +240,9 @@
 
             <a th:if="${usuarioActual != null}"
                th:href="@{/api/calendario/medico/{id}/turnos.ics(id=${usuarioActual.username})}" 
-               class="btn btn-outline" style="width: 100%; font-size: 0.75rem; text-align: center; margin-bottom: 8px;">
-               📲 Descargar Feed iCal (.ics)
+               class="btn btn-outline" style="width: 100%; font-size: 0.75rem; text-align: center;">
+                📲 Descargar Feed iCal (.ics)
             </a>
-
-            <div style="font-size: 0.72rem; color: var(--texto-secundario); background: #FFF; padding: 8px; border-radius: 4px; border: 1px solid var(--arena-linea);">
-              
-                <span style="word-break: break-all; color: var(--verde-primario);" 
-                      
-                </span>
-            </div>
         </div>
     </div>
 
