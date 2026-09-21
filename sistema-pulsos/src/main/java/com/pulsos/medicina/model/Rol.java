@@ -14,4 +14,9 @@ public enum Rol {
     public String getDescripcion() {
         return descripcion;
     }
+
+    // Agrega este método para compatibilidad con UsuarioService
+    public String getNombre() {
+        return this.name(); // O puedes retornar descripcion según prefieras
+    }
 }
