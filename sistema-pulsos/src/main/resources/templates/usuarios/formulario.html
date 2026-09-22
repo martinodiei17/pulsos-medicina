@@ -6,9 +6,11 @@
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
     <style>
         body {
-            background-color: #f8f6f2;
+            background-color: #fcfbfa;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: #2c3e35;
+            margin: 0;
+            padding: 0;
         }
         /* Cabecera institucional */
         .header-pulsos {
@@ -59,42 +61,44 @@
             color: #555;
         }
         
-        /* Contenedor principal estilo tarjeta */
+        /* Contenedor principal estilo tarjeta de la imagen */
         .content-wrapper {
-            max-width: 850px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
         }
         .card-pulsos {
             background: #ffffff;
             border: 1px solid #e5e0d8;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            padding: 40px;
-        }
-        .form-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #2c3e35;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+            padding: 35px;
             margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee5dc;
         }
         
-        /* Campos del formulario idénticos a la estética del sistema */
+        /* Título de sección idéntico al estilo de evolución médica */
+        .section-title {
+            font-family: "Georgia", serif;
+            font-size: 1.1rem;
+            font-weight: normal;
+            color: #2c3e35;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+        }
+        
+        /* Estilo de campos idénticos al modelo de referencia */
         .field-group {
             margin-bottom: 20px;
         }
         .custom-label {
             display: block;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 700;
             text-transform: uppercase;
-            color: #6c757d;
+            color: #555;
             letter-spacing: 0.8px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .custom-input {
             width: 100%;
@@ -116,7 +120,7 @@
             margin-top: 5px;
         }
         
-        /* Botones institucionales */
+        /* Botones institucionales exactos */
         .btn-pulsos-guardar {
             background-color: #3b4d43;
             color: #ffffff;
@@ -127,6 +131,7 @@
             letter-spacing: 1px;
             padding: 10px 24px;
             border-radius: 4px;
+            cursor: pointer;
         }
         .btn-pulsos-guardar:hover {
             background-color: #2c3e35;
@@ -178,7 +183,7 @@
     <!-- CONTENEDOR DEL FORMULARIO -->
     <div class="content-wrapper">
         <div class="card-pulsos">
-            <div class="form-title" th:text="${esEdicion} ? 'Editar Profesional / Usuario' : 'Nuevo Profesional / Usuario'">
+            <div class="section-title" th:text="${esEdicion} ? 'Editar Profesional / Usuario' : 'Registrar Nuevo Profesional / Usuario'">
                 Formulario
             </div>
 
@@ -230,7 +235,7 @@
                     <input type="text" th:field="*{especialidad}" class="custom-input" placeholder="ej. Cardiología & Deportología" />
                 </div>
 
-                <!-- Roles -->
+                <!-- Roles asignados -->
                 <div class="field-group p-3 my-3" style="background-color: #faf8f5; border: 1px solid #eef2f0; border-radius: 4px;">
                     <label class="custom-label mb-2">Roles asignados en el sistema</label>
                     <div class="d-flex flex-wrap gap-4">
@@ -241,8 +246,8 @@
                     </div>
                 </div>
 
-                <!-- Botones de Acción -->
-                <div class="d-flex justify-content-end gap-2 pt-3 mt-4 border-top">
+                <!-- Botones de Acciónalineados a la derecha igual que en el modelo -->
+                <div class="d-flex justify-content-end gap-2 pt-3 mt-4 border-top" style="border-color: #e5e0d8 !important;">
                     <a th:href="@{/usuarios}" class="btn-pulsos-cancelar">Cancelar</a>
                     <button type="submit" class="btn-pulsos-guardar">Guardar Cambios</button>
                 </div>
