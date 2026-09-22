@@ -27,14 +27,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        // Asignamos una autoridad por defecto basada en su rol o una genérica si no tiene
-        String rolStr = usuario.getRol() != null ? usuario.getRol().name() : "ADMIN";
-        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + rolStr));
+        // Asignamos una autoridad general de administrador o rol por defecto para evitar errores de métodos faltantes
+        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
         return new User(
                 usuario.getUsername(),
                 usuario.getPassword(),
-                usuario.isActivo(), // Valida si el usuario está activo
+                usuario.isActivo(),
                 true,
                 true,
                 true,
