@@ -254,7 +254,7 @@
                         <label class="custom-label">Rol Asignado en el Sistema</label>
                         <select th:field="*{roles}" class="custom-input" required>
                             <option value="">Seleccione un rol...</option>
-                            <option th:each="rol : ${todosLosRoles}" th:value="${rol}" th:text="${rol}"></option>
+                            <option th:each="rol : ${todosLosRoles}" th:value="${rol}" th:text="${rol.descripcion}"></option>
                         </select>
                     </div>
                 </div>
