@@ -47,11 +47,9 @@ public class UsuarioController {
 
     @PostMapping("/guardar")
     public String guardarUsuario(@ModelAttribute Usuario usuario, @RequestParam(required = false) String passwordPlana) {
-        usuarioService.guardar(usuario, passwordPlansSafe(passwordPlana));
+        // Manejo directo de la contraseña sin errores de nombres de métodos
+        String passFinal = (passwordPlana != null && !passwordPlana.trim().isEmpty()) ? passwordPlana : null;
+        usuarioService.guardar(usuario, passFinal);
         return "redirect:/usuarios";
-    }
-
-    private String plansSafe(String pass) {
-        return (pass != null && !pass.trim().isEmpty()) ? pass : null;
     }
 }
