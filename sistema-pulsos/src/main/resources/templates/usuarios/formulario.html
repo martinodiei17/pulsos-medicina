@@ -5,59 +5,82 @@
     <title>Pulsos - Gestión de Profesional / Usuario</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
-    <!-- Estilos personalizados alineados al sistema -->
+    <!-- Estilos personalizados idénticos al sistema -->
     <style>
         body {
             background-color: #fcfbfa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
-        /* Cabecera idéntica al sistema */
+        /* Cabecera idéntica a ancho completo */
         .navbar-pulsos {
+            width: 100%;
             border-bottom: 1px solid #e0dbd1;
             background-color: #ffffff;
-            padding: 15px 30px;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-container {
+            display: flex;
+            flex-direction: column;
         }
         .logo-text {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             letter-spacing: 4px;
             font-weight: 300;
             color: #2c3e35;
             text-decoration: none;
         }
         .logo-sub {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             letter-spacing: 2px;
             color: #7f8c8d;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 30px;
         }
         .nav-link-pulsos {
             color: #555;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             text-decoration: none;
-            margin: 0 15px;
             letter-spacing: 0.5px;
+            padding-bottom: 4px;
         }
         .nav-link-pulsos.active {
             color: #2c3e35;
             border-bottom: 2px solid #2c3e35;
-            padding-bottom: 4px;
         }
-        /* Contenedor estilo tarjeta minimalista */
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        /* Contenedor central del formulario */
+        .main-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
         .card-pulsos {
             background: #ffffff;
             border: 1px solid #e5e0d8;
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            padding: 30px;
-            margin-top: 40px;
+            padding: 35px;
         }
         .btn-pulsos-primary {
             background-color: #3b4d43;
             color: #ffffff;
             border: none;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             padding: 10px 25px;
@@ -71,23 +94,25 @@
             background-color: #e2ded8;
             color: #444;
             border: none;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             padding: 10px 25px;
             border-radius: 4px;
         }
         .form-label {
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
-            color: #666;
+            color: #555;
             letter-spacing: 0.5px;
+            margin-bottom: 6px;
         }
         .form-control {
             border: 1px solid #dcd6cd;
             border-radius: 4px;
-            padding: 10px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
         }
         .form-control:focus {
             border-color: #3b4d43;
@@ -97,29 +122,31 @@
 </head>
 <body>
 
-    <!-- CABECERA INSTITUCIONAL IDÉNTICA A LA VISTA PRINCIPAL -->
-    <header class="navbar-pulsos d-flex justify-content-between align-items-center">
-        <div>
+    <!-- CABECERA INSTITUCIONAL FLUIDA Y ALINEADA -->
+    <header class="navbar-pulsos">
+        <div class="logo-container">
             <a href="#" class="logo-text">P U L S O S</a>
             <div class="logo-sub">MEDICINA & BIENESTAR</div>
         </div>
-        <nav class="d-none d-md-flex align-items-center">
-            <a th:href="@{/turnos}" class="nav-link-pulsos">Agenda de Turnos</a>
-            <a th:href="@{/pacientes}" class="nav-link-pulsos">Pacientes & Historias</a>
-            <a th:href="@{/usuarios}" class="nav-link-pulsos active">Profesionales / Usuarios</a>
+        
+        <nav class="nav-links">
+            <a th:href="@{/turnos}" class="nav-link-pulsos">AGENDA DE TURNOS</a>
+            <a th:href="@{/pacientes}" class="nav-link-pulsos">PACIENTES & HISTORIAS</a>
+            <a th:href="@{/usuarios}" class="nav-link-pulsos active">PROFESIONALES / USUARIOS</a>
         </nav>
-        <div class="d-flex align-items-center">
-            <span class="small text-muted me-3">Usuario: <strong>admin</strong></span>
+
+        <div class="user-section">
+            <span class="small text-muted">Usuario: <strong th:text="${#authentication.name}">admin</strong></span>
             <form th:action="@{/logout}" method="post" class="m-0">
-                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="font-size: 0.75rem; letter-spacing: 1px;">SALIR</button>
+                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="font-size: 0.7rem; letter-spacing: 1px;">SALIR</button>
             </form>
         </div>
     </header>
 
     <!-- CUERPO DEL FORMULARIO -->
-    <div class="container" style="max-width: 800px;">
+    <main class="main-container">
         <div class="card-pulsos">
-            <h4 class="mb-4 pb-2 border-bottom text-uppercase fw-light" style="letter-spacing: 1px; color: #2c3e35;"
+            <h4 class="mb-4 pb-3 border-bottom text-uppercase fw-light" style="letter-spacing: 1px; color: #2c3e35; font-size: 1.1rem;"
                 th:text="${esEdicion} ? 'Editar Profesional / Usuario' : 'Nuevo Profesional / Usuario'">
                 Formulario
             </h4>
@@ -143,7 +170,7 @@
                         <input type="password" id="passwordPlana" name="passwordPlana" class="form-control" 
                                th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener actual' : 'Ingrese contraseña'" 
                                th:required="${!esEdicion}" />
-                        <div class="form-text text-muted small" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
+                        <div class="form-text text-muted small mt-1" style="font-size: 0.75rem;" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
                     </div>
                 </div>
 
@@ -182,7 +209,7 @@
                 </div>
 
                 <!-- Selección de Roles -->
-                <div class="mb-4 p-3 bg-light rounded border">
+                <div class="mb-4 p-3 bg-light rounded border" style="border-color: #e5e0d8 !important;">
                     <label class="form-label mb-2 d-block">Roles Asignados en el Sistema</label>
                     <div class="d-flex flex-wrap gap-4">
                         <div th:each="rol : ${todosLosRoles}" class="form-check">
@@ -199,7 +226,7 @@
                 </div>
             </form>
         </div>
-    </div>
+    </main>
 
 </body>
 </html>
