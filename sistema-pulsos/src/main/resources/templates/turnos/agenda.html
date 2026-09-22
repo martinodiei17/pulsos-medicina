@@ -193,7 +193,7 @@
     <nav>
         <a href="/turnos" class="active">Agenda de Turnos</a>
         <a href="/pacientes">Pacientes & Historias</a>
-        <a href="/usuarios" sec:authorize="hasRole('ROLE_ADMIN')">👥 Profesionales / Usuarios</a>
+        <a href="/usuarios" sec:authorize="hasRole('ADMIN')">👥 Profesionales / Usuarios</a>
     </nav>
     <div style="font-size: 0.8rem; display: flex; align-items: center; gap: 15px;">
         <span>Usuario: <strong sec:authentication="name">Dr.</strong></span>
@@ -230,7 +230,8 @@
             </form>
         </div>
 
-        <div class="panel sync-box" sec:authorize="hasRole('ROLE_MEDICO')">
+        <!-- SECCIÓN DE CALENDARIO VISIBLE PARA MÉDICOS Y ADMINISTRADORES -->
+        <div class="panel sync-box" sec:authorize="hasAnyRole('ADMIN', 'MEDICO')">
             <h3 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--verde-primario); margin-bottom: 8px;">
                 📅 Sincronizar tu Calendario
             </h3>
@@ -271,7 +272,7 @@
                            class="btn btn-outline" 
                            style="padding: 4px 8px; font-size: 0.72rem; background: #FFF;" 
                            title="Agregar este turno específico a Google Calendar">
-                           🗓️ Google Cal
+                            🗓️ Google Cal
                         </a>
 
                         <form th:action="@{/turnos/{id}/estado(id=${t.id})}" method="post" style="display:inline;">
