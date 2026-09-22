@@ -44,30 +44,29 @@ public class TurnoService {
     }
 
     public Turno agendarTurno(Long pacienteId, Turno turno) {
-        // 1. Buscar y asignar el paciente
         Paciente paciente = pacienteRepo.findById(pacienteId)
                 .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
         turno.setPaciente(paciente);
 
-        // 2. Guardar el turno en la base de datos local
+        // 1. Guardar el turno en la base de datos local de forma segura
         Turno turnoGuardado = turnoRepo.save(turno);
 
-        // 3. Obtener el usuario/médico logueado actual para automatizar la sincronización
+        // 2. Intentar sincronización automática con Google Calendar según el usuario logueado
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
                 String usernameLogueado = auth.getName();
                 
-                Usuario medicoLogueado = usuarioRepo.findByUsername(usernameLogueado)
-                        .orElse(null);
+                Usuario medicoLogueado = usuarioRepo.findByUsername(usernameLogueado).orElse(null);
 
-                // Si el usuario tiene un token o credencial de Google asociada, sincronizamos
+                // Nota: Cuando agregues el campo de token en tu entidad Usuario, descomenta la siguiente línea:
+                /*
                 if (medicoLogueado != null && medicoLogueado.getGoogleAccessToken() != null) {
                     googleCalendarService.agregarTurnoACalendar(turnoGuardado, medicoLogueado.getGoogleAccessToken());
                 }
+                */
             }
         } catch (Exception e) {
-            // Registramos el error de sincronización para que no interrumpa ni falle la creación del turno
             e.printStackTrace();
         }
 
