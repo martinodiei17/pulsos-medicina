@@ -22,7 +22,7 @@
         .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #E3DDD8; }
         .btn { background-color: #485A48; color: #fff; padding: 12px 28px; border-radius: 6px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; text-decoration: none; border: none; cursor: pointer; font-weight: 600; }
         .btn:hover { background-color: #364436; }
-        .btn-outline { background-color: transparent; color: #485A48; border: 1px solid #485A48; }
+        .btn-outline { background-color: transparent; color: #485A48; border: 1px solid #485A48; padding: 6px 14px; font-size: 0.75rem; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
         .helper-text { font-size: 0.75rem; color: #6C756C; margin-top: 4px; }
     </style>
 </head>
@@ -30,7 +30,7 @@
 
 <header>
     <div><h1 style="font-size: 1.5rem; color: #485A48; letter-spacing: 3px;">P U L S O S</h1></div>
-    <div><a href="/usuarios" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.75rem;">Volver al Listado</a></div>
+    <div><a href="/usuarios" class="btn-outline">Volver al Listado</a></div>
 </header>
 
 <div class="container">
@@ -93,7 +93,7 @@
             </div>
 
             <div class="actions">
-                <a href="/usuarios" class="btn btn-outline">Cancelar</a>
+                <a href="/usuarios" class="btn-outline" style="background:transparent; color:#485A48; border:1px solid #485A48; padding:11px 26px;">← Cancelar</a>
                 <button type="submit" class="btn">Guardar Profesional</button>
             </div>
         </form>
