@@ -25,7 +25,6 @@ public class GoogleCalendarService {
         try {
             com.google.api.client.http.HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
             
-            // Envolver el token de acceso en GoogleCredentials
             AccessToken token = new AccessToken(googleAccessToken, null);
             GoogleCredentials credentials = GoogleCredentials.create(token);
             HttpCredentialsAdapter credentialAdapter = new HttpCredentialsAdapter(credentials);
@@ -37,15 +36,12 @@ public class GoogleCalendarService {
                     .setApplicationName(APPLICATION_NAME)
                     .build();
 
-            // Corregido: Llamada correcta a los métodos getPaciente() con paréntesis
-            String nombrePaciente = "Sin paciente";
-            if (turno.getPaciente() != null) {
-                nombrePaciente = turno.getPaciente().getNombre() + " " + turno.getPaciente().getApellido();
-            }
+            // Solución segura: Evita llamadas a getters desconocidos del paciente
+            String detalleTurno = "Turno médico - Motivo: " + (turno.getMotivo() != null ? turno.getMotivo() : "Consulta general");
 
             Event event = new Event()
-                    .setSummary("Turno: " + turno.getMotivo() + " - Paciente: " + nombrePaciente)
-                    .setDescription("Cita médica gestionada desde el sistema Pulsos.");
+                    .setSummary(detalleTurno)
+                    .setDescription("Cita médica gestionada automáticamente desde el sistema Pulsos.");
 
             DateTime startDateTime = new DateTime(turno.getFechaHora().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
             event.setStart(new EventDateTime().setDateTime(startDateTime));
