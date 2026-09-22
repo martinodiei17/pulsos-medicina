@@ -28,7 +28,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
         // Asignamos una autoridad general de administrador o rol por defecto para evitar errores de métodos faltantes
-        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+       List<GrantedAuthority> authorities = List.of(
+    new SimpleGrantedAuthority("ADMIN"),
+    new SimpleGrantedAuthority("ROLE_ADMIN")
+);
 
         return new User(
                 usuario.getUsername(),
