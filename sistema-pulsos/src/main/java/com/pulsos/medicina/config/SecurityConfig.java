@@ -1,51 +1,44 @@
-package com.pulsos.medicina.service;
+package com.pulsos.medicina.config;
 
-import com.pulsos.medicina.model.Usuario;
-import com.pulsos.medicina.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import org.springframework.security.web.SecurityFilterChain;
 
-import java.util.Optional;
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
 
-@Service
-public class UsuarioService {
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    // Método para guardar un usuario nuevo
-    public Usuario guardarUsuario(Usuario usuario) {
-        // Encriptar la contraseña obligatoriamente para registros nuevos
-        if (usuario.getPassword() != null && !usuario.getPassword().isEmpty()) {
-            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        }
-        return usuarioRepository.save(usuario);
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
-    // Método seguro para actualizar un usuario existente sin romper la contraseña
-    public Usuario actualizarUsuario(Long id, Usuario usuarioActualizado, String nuevaPassword) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
-        
-        if (usuarioOpt.isPresent()) {
-            Usuario usuarioExistente = usuarioOpt.get();
-            
-            // Actualizar campos básicos
-            usuarioExistente.setEmail(usuarioActualizado.getEmail());
-            // Actualiza aquí otros campos que tenga tu entidad Usuario (ej. nombre, apellido, etc.)
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/login", "/css/**", "/images/**", "/h2-console/**", "/api/calendario/**").permitAll()
+                .requestMatchers("/usuarios/**").hasRole("ADMIN")
+                .requestMatchers("/pacientes/*/consultas", "/pacientes/*/adjuntos", "/pacientes/adjuntos/*/eliminar").hasAnyRole("MEDICO", "ADMIN")
+                .requestMatchers("/pacientes/**", "/turnos/**").authenticated()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/turnos", true)
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            )
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/calendario/**"))
+            .headers(headers -> headers.frameOptions(f -> f.sameOrigin()));
 
-            // VALIDACIÓN CLAVE: Si la nueva contraseña no está vacía, se encripta y se actualiza.
-            // Si viene vacía, se MANTIENE la contraseña anterior para que no se rompa el acceso.
-            if (nuevaPassword != null && !nuevaPassword.trim().isEmpty()) {
-                usuarioExistente.setPassword(passwordEncoder.encode(nuevaPassword));
-            }
-
-            return usuarioRepository.save(usuarioExistente);
-        } else {
-            throw new RuntimeException("Usuario no encontrado con ID: " + id);
-        }
+        return http.build();
     }
 }
