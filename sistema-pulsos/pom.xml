@@ -60,6 +60,13 @@
 			<version>1.3.39</version>
 		</dependency>
 
+		<!-- Google Auth Library -->
+<dependency>
+    <groupId>com.google.auth</groupId>
+    <artifactId>google-auth-library-oauth2-http</artifactId>
+    <version>1.19.0</version>
+</dependency>
+
 		<!-- Google API Client -->
 		<dependency>
 			<groupId>com.google.api-client</groupId>
