@@ -13,19 +13,21 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initDatabase(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            // Reemplaza "smeregone" y la contraseña por la que utilices normalmente
-            String username = "smeregone";
-            
-            if (usuarioRepository.findByUsername(username).isEmpty()) {
-                Usuario admin = new Usuario();
-                admin.setUsername(username);
-                // Asegúrate de usar el encoder para que Spring Security reconozca el hash
-                admin.setPassword(passwordEncoder.encode("tu_contraseña_segura")); 
-                // Configura roles o nombre según las propiedades de tu entidad Usuario
-                
-                usuarioRepository.save(admin);
-                System.out.println("Usuario inicial " + username + " creado exitosamente en PostgreSQL.");
-            }
+            // Configurar o actualizar el usuario smeregone
+            crearOActualizarUsuario(usuarioRepository, passwordEncoder, "smeregone", "123456", "Dra. Maria Sol Meregone");
+
+            // Configurar o actualizar el usuario admin
+            crearOActualizarUsuario(usuarioRepository, passwordEncoder, "admin", "123456", "Administrador Pulsos");
         };
+    }
+
+    private void crearOActualizarUsuario(UsuarioRepository repo, PasswordEncoder encoder, String username, String passwordPlana, String nombre) {
+        Usuario usuario = repo.findByUsername(username).orElse(new Usuario());
+        usuario.setUsername(username);
+        usuario.setPassword(encoder.encode(passwordPlana));
+        usuario.setNombreCompleto(nombre);
+        usuario.setActivo(true);
+        repo.save(usuario);
+        System.out.println("Usuario " + username + " configurado exitosamente con contraseña: " + passwordPlana);
     }
 }
