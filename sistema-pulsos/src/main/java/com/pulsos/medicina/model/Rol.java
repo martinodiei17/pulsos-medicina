@@ -2,6 +2,7 @@ package com.pulsos.medicina.model;
 
 public enum Rol {
     ROLE_MEDICO("Médico / Profesional"),
+    ROLE_LICENCIADO("Licenciado"),
     ROLE_RECEPCION("Recepción / Secretaría"),
     ROLE_ADMIN("Administrador");
 
