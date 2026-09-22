@@ -63,7 +63,7 @@
         
         /* Contenedor principal estilo tarjeta */
         .content-wrapper {
-            max-width: 850px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -87,9 +87,9 @@
             margin-bottom: 25px;
         }
         
-        /* Campos alineados en columna vertical con ancho uniforme */
+        /* Campos organizados y proporcionados */
         .field-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .custom-label {
             display: block;
@@ -100,14 +100,14 @@
             letter-spacing: 0.8px;
             margin-bottom: 6px;
         }
-        /* Estilo unificado y estricto para inputs y selects */
+        
+        /* Inputs y Selects perfectamente acoplados a la columna */
         .custom-input, select.custom-input {
             width: 100% !important;
-            box-sizing: border-box !important;
             background-color: #ffffff;
             border: 1px solid #dcd6cd;
             border-radius: 4px;
-            padding: 10px 14px;
+            padding: 8px 12px;
             font-size: 0.85rem;
             color: #333;
             height: auto;
@@ -118,9 +118,9 @@
             box-shadow: 0 0 0 2px rgba(59, 77, 67, 0.1);
         }
         .help-text {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #8c857b;
-            margin-top: 5px;
+            margin-top: 4px;
         }
         
         /* Botones institucionales */
@@ -194,54 +194,65 @@
                 <input type="hidden" th:field="*{id}" />
                 <input type="hidden" th:field="*{activo}" />
 
-                <div class="field-group">
-                    <label class="custom-label">Usuario (Login)</label>
-                    <input type="text" th:field="*{username}" class="custom-input" required placeholder="ej. dr.santiago" />
+                <!-- Fila 1: Usuario y Contraseña -->
+                <div class="row">
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Usuario (Login)</label>
+                        <input type="text" th:field="*{username}" class="custom-input" required placeholder="ej. dr.santiago" />
+                    </div>
+
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Contraseña</label>
+                        <input type="password" name="passwordPlana" class="custom-input" 
+                               th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener la actual' : 'Ingrese contraseña'" 
+                               th:required="${!esEdicion}" />
+                        <div class="help-text" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
+                    </div>
                 </div>
 
-                <div class="field-group">
-                    <label class="custom-label">Contraseña</label>
-                    <input type="password" name="passwordPlana" class="custom-input" 
-                           th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener la actual' : 'Ingrese contraseña'" 
-                           th:required="${!esEdicion}" />
-                    <div class="help-text" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
+                <!-- Fila 2: Nombre y Correo Electrónico -->
+                <div class="row">
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Nombre / Profesional</label>
+                        <input type="text" th:field="*{nombreCompleto}" class="custom-input" placeholder="ej. Dr. Santiago Albarracín" />
+                    </div>
+
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Correo Electrónico</label>
+                        <input type="email" th:field="*{email}" class="custom-input" placeholder="correo@pulsosmedicina.com.ar" />
+                    </div>
                 </div>
 
-                <div class="field-group">
-                    <label class="custom-label">Nombre / Profesional</label>
-                    <input type="text" th:field="*{nombreCompleto}" class="custom-input" placeholder="ej. Dr. Santiago Albarracín" />
+                <!-- Fila 3: Teléfono y Matrícula -->
+                <div class="row">
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Teléfono</label>
+                        <input type="text" th:field="*{telefono}" class="custom-input" placeholder="Opcional" />
+                    </div>
+
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Matrícula</label>
+                        <input type="text" th:field="*{matricula}" class="custom-input" placeholder="ej. MN 122.450" />
+                    </div>
                 </div>
 
-                <div class="field-group">
-                    <label class="custom-label">Correo Electrónico</label>
-                    <input type="email" th:field="*{email}" class="custom-input" placeholder="correo@pulsosmedicina.com.ar" />
+                <!-- Fila 4: Especialidad y Rol Asignado -->
+                <div class="row">
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Especialidad</label>
+                        <input type="text" th:field="*{especialidad}" class="custom-input" placeholder="ej. Cardiología & Deportología" />
+                    </div>
+
+                    <div class="col-md-6 field-group">
+                        <label class="custom-label">Rol Asignado en el Sistema</label>
+                        <select th:field="*{roles}" class="custom-input" required>
+                            <option value="">Seleccione un rol...</option>
+                            <option th:each="rol : ${todosLosRoles}" th:value="${rol}" th:text="${rol}"></option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="field-group">
-                    <label class="custom-label">Teléfono</label>
-                    <input type="text" th:field="*{telefono}" class="custom-input" placeholder="Opcional" />
-                </div>
-
-                <div class="field-group">
-                    <label class="custom-label">Matrícula</label>
-                    <input type="text" th:field="*{matricula}" class="custom-input" placeholder="ej. MN 122.450" />
-                </div>
-
-                <div class="field-group">
-                    <label class="custom-label">Especialidad</label>
-                    <input type="text" th:field="*{especialidad}" class="custom-input" placeholder="ej. Cardiología & Deportología" />
-                </div>
-
-                <!-- Combo de roles alineado correctamente -->
-                <div class="field-group">
-                    <label class="custom-label">Rol Asignado en el Sistema</label>
-                    <select th:field="*{roles}" class="custom-input" required>
-                        <option value="">Seleccione un rol...</option>
-                        <option th:each="rol : ${todosLosRoles}" th:value="${rol}" th:text="${rol}"></option>
-                    </select>
-                </div>
-
-                <!-- Botones de Acción alineados a la derecha -->
+                <!-- Botones de Acción -->
                 <div class="d-flex justify-content-end gap-2 pt-3 mt-4 border-top" style="border-color: #e5e0d8 !important;">
                     <a th:href="@{/usuarios}" class="btn-pulsos-cancelar">Cancelar</a>
                     <button type="submit" class="btn-pulsos-guardar">Guardar Cambios</button>
