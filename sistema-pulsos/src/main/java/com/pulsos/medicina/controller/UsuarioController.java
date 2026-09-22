@@ -36,13 +36,13 @@ public class UsuarioController {
 
     @GetMapping("/editar/{id}")
     public String formularioEditar(@PathVariable Long id, Model model) {
-        Usuario usuario = usuarioService.buscarPorId(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        model.addAttribute("usuario", usuario);
-        model.addAttribute("todosLosRoles", Rol.values());
-        model.addAttribute("esEdicion", true);
-        return "usuarios/formulario";
-    }
+    Usuario usuario = usuarioService.buscarPorId(id)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    model.addAttribute("usuario", usuario);
+    model.addAttribute("todosLosRoles", Rol.values());
+    model.addAttribute("esEdicion", true);
+    return "usuarios/formulario";
+}
 
     @PostMapping("/guardar")
     public String guardar(@ModelAttribute Usuario usuario, @RequestParam(value = "passwordPlana", required = false) String passwordPlana) {
