@@ -272,17 +272,17 @@
                     <span class="helper-text" th:if="${esEdicion != null and esEdicion}">Dejar en blanco para conservar la actual.</span>
                 </div>
 
-                <!-- Rol -->
-                <div class="form-group">
-                    <label for="rol">Rol Asignado</label>
-                    <select id="rol" name="rol" required>
-                        <option value="" disabled selected>Selecciona un rol...</option>
-                        <option th:each="r : ${todosLosRoles}" 
-                                th:value="${r}" 
-                                th:text="${r}">
-                        </option>
-                    </select>
-                </div>
+               <!-- Rol -->
+<div class="form-group">
+    <label for="rol">Rol Asignado</label>
+    <select id="rol" th:field="*{rol}" required>
+        <option value="" disabled selected>Selecciona un rol...</option>
+        <option th:each="r : ${todosLosRoles}"  
+                th:value="${r}" 
+                th:text="${r}">
+        </option>
+    </select>
+</div>
 
                 <!-- Estado Activo -->
                 <div class="form-group full-width">
