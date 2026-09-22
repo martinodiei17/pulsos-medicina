@@ -231,7 +231,6 @@
             Nuevo Profesional / Usuario
         </h2>
 
-        <!-- Agregado th:object para enlazar correctamente con el controlador -->
         <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post">
             <input type="hidden" th:field="*{id}" />
 
@@ -273,7 +272,7 @@
                     <span class="helper-text" th:if="${esEdicion != null and esEdicion}">Dejar en blanco para conservar la actual.</span>
                 </div>
 
-                <!-- Rol Asignado corregido con th:field -->
+                <!-- Rol Asignado -->
                 <div class="form-group">
                     <label for="rol">Rol Asignado</label>
                     <select id="rol" th:field="*{rol}" required>
@@ -294,7 +293,7 @@
                 </div>
             </div>
 
-            <!-- Botones de Acción -->
+            <!-- Botones de Acción (Garantizado al final del form) -->
             <div class="actions">
                 <a href="/usuarios" class="btn btn-outline">← Volver</a>
                 <button type="submit" class="btn">Guardar Profesional</button>
