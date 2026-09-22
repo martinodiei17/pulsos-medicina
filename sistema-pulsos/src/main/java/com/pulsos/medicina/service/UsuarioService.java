@@ -1,5 +1,6 @@
 package com.pulsos.medicina.service;
 
+import com.pulsos.medicina.model.Rol;
 import com.pulsos.medicina.model.Usuario;
 import com.pulsos.medicina.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UsuarioService {
@@ -34,7 +36,7 @@ public class UsuarioService {
     public List<Usuario> listarMedicos() {
         return usuarioRepository.findAll().stream()
                 .filter(u -> u.isActivo() && u.getRoles() != null && u.getRoles().stream()
-                    .anyMatch(r -> r.name().toUpperCase().contains("MEDICO")))
+                        .anyMatch(r -> r.name().toUpperCase().contains("MEDICO")))
                 .toList();
     }
 
@@ -57,8 +59,12 @@ public class UsuarioService {
             usuarioExistente.setEmail(usuario.getEmail());
             usuarioExistente.setEspecialidad(usuario.getEspecialidad());
             usuarioExistente.setMatricula(usuario.getMatricula());
-            usuarioExistente.setRoles(usuario.getRoles());
             usuarioExistente.setActivo(usuario.isActivo());
+
+            // Solo actualiza roles si el formulario envió datos, de lo contrario conserva los anteriores
+            if (usuario.getRoles() != null && !usuario.getRoles().isEmpty()) {
+                usuarioExistente.setRoles(usuario.getRoles());
+            }
 
             if (passwordPlana != null && !passwordPlana.trim().isEmpty()) {
                 usuarioExistente.setPassword(passwordEncoder.encode(passwordPlana));
@@ -68,6 +74,12 @@ public class UsuarioService {
             if (passwordPlana != null && !passwordPlana.trim().isEmpty()) {
                 usuario.setPassword(passwordEncoder.encode(passwordPlana));
             }
+
+            // Si es nuevo y no trae roles asignados, le ponemos uno por defecto para evitar errores
+            if (usuario.getRoles() == null || usuario.getRoles().isEmpty()) {
+                usuario.setRoles(Set.of(Rol.ROLE_MEDICO));
+            }
+
             usuarioRepository.save(usuario);
         }
     }
