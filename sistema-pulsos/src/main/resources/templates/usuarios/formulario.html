@@ -275,11 +275,12 @@
                 <!-- Rol Asignado -->
                 <div class="form-group">
                     <label for="rol">Rol Asignado</label>
-                    <select id="rol" th:field="*{rol}" required>
-                        <option value="" disabled selected>Selecciona un rol...</option>
-                        <option th:each="r : ${todosLosRoles}"  
+                    <select id="rol" name="rol" required>
+                        <option value="" disabled th:selected="${usuario.rol == null}">Selecciona un rol...</option>
+                        <option th:each="r : ${todosLosRoles}" 
                                 th:value="${r}" 
-                                th:text="${r}">
+                                th:text="${r}"
+                                th:selected="${usuario.rol == r}">
                         </option>
                     </select>
                 </div>
@@ -287,13 +288,13 @@
                 <!-- Estado Activo -->
                 <div class="form-group full-width">
                     <div class="checkbox-group">
-                        <input type="checkbox" id="activo" th:field="*{activo}">
+                        <input type="checkbox" id="activo" name="activo" th:checked="${usuario.activo}">
                         <label for="activo">Usuario / Profesional Activo en el Sistema</label>
                     </div>
                 </div>
             </div>
 
-            <!-- Botones de Acción (Garantizado al final del form) -->
+            <!-- Botones de Acción -->
             <div class="actions">
                 <a href="/usuarios" class="btn btn-outline">← Volver</a>
                 <button type="submit" class="btn">Guardar Profesional</button>
