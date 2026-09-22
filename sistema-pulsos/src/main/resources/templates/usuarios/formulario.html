@@ -61,7 +61,7 @@
             color: #555;
         }
         
-        /* Contenedor principal alineado en columna */
+        /* Contenedor principal estilo tarjeta */
         .content-wrapper {
             max-width: 850px;
             margin: 40px auto;
@@ -87,7 +87,7 @@
             margin-bottom: 25px;
         }
         
-        /* Campos alineados en columna vertical */
+        /* Campos alineados en columna vertical con ancho uniforme */
         .field-group {
             margin-bottom: 20px;
         }
@@ -100,14 +100,17 @@
             letter-spacing: 0.8px;
             margin-bottom: 6px;
         }
-        .custom-input {
-            width: 100%;
+        /* Estilo unificado y estricto para inputs y selects */
+        .custom-input, select.custom-input {
+            width: 100% !important;
+            box-sizing: border-box !important;
             background-color: #ffffff;
             border: 1px solid #dcd6cd;
             border-radius: 4px;
             padding: 10px 14px;
             font-size: 0.85rem;
             color: #333;
+            height: auto;
         }
         .custom-input:focus {
             border-color: #3b4d43;
@@ -191,7 +194,6 @@
                 <input type="hidden" th:field="*{id}" />
                 <input type="hidden" th:field="*{activo}" />
 
-                <!-- Todos los campos ordenados en una columna vertical limpia -->
                 <div class="field-group">
                     <label class="custom-label">Usuario (Login)</label>
                     <input type="text" th:field="*{username}" class="custom-input" required placeholder="ej. dr.santiago" />
@@ -230,7 +232,7 @@
                     <input type="text" th:field="*{especialidad}" class="custom-input" placeholder="ej. Cardiología & Deportología" />
                 </div>
 
-                <!-- Roles convertidos en Combo Box (Select) -->
+                <!-- Combo de roles alineado correctamente -->
                 <div class="field-group">
                     <label class="custom-label">Rol Asignado en el Sistema</label>
                     <select th:field="*{roles}" class="custom-input" required>
