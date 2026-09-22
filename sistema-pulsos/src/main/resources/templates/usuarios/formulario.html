@@ -2,77 +2,204 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Usuario / Profesional</title>
+    <title>Pulsos - Gestión de Profesional / Usuario</title>
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <!-- Estilos personalizados alineados al sistema -->
+    <style>
+        body {
+            background-color: #fcfbfa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        /* Cabecera idéntica al sistema */
+        .navbar-pulsos {
+            border-bottom: 1px solid #e0dbd1;
+            background-color: #ffffff;
+            padding: 15px 30px;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            font-weight: 300;
+            color: #2c3e35;
+            text-decoration: none;
+        }
+        .logo-sub {
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            color: #7f8c8d;
+        }
+        .nav-link-pulsos {
+            color: #555;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            text-decoration: none;
+            margin: 0 15px;
+            letter-spacing: 0.5px;
+        }
+        .nav-link-pulsos.active {
+            color: #2c3e35;
+            border-bottom: 2px solid #2c3e35;
+            padding-bottom: 4px;
+        }
+        /* Contenedor estilo tarjeta minimalista */
+        .card-pulsos {
+            background: #ffffff;
+            border: 1px solid #e5e0d8;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            padding: 30px;
+            margin-top: 40px;
+        }
+        .btn-pulsos-primary {
+            background-color: #3b4d43;
+            color: #ffffff;
+            border: none;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 10px 25px;
+            border-radius: 4px;
+        }
+        .btn-pulsos-primary:hover {
+            background-color: #2c3e35;
+            color: #ffffff;
+        }
+        .btn-pulsos-secondary {
+            background-color: #e2ded8;
+            color: #444;
+            border: none;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 10px 25px;
+            border-radius: 4px;
+        }
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            letter-spacing: 0.5px;
+        }
+        .form-control {
+            border: 1px solid #dcd6cd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .form-control:focus {
+            border-color: #3b4d43;
+            box-shadow: 0 0 0 0.2rem rgba(59, 77, 67, 0.15);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2 th:text="${esEdicion} ? 'Editar Usuario / Profesional' : 'Nuevo Usuario / Profesional'">Formulario</h2>
 
-        <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post" class="mt-4">
-            
-            <!-- ID oculto para saber si estamos actualizando -->
-            <input type="hidden" th:field="*{id}" />
-            <input type="hidden" th:field="*{activo}" />
+    <!-- CABECERA INSTITUCIONAL IDÉNTICA A LA VISTA PRINCIPAL -->
+    <header class="navbar-pulsos d-flex justify-content-between align-items-center">
+        <div>
+            <a href="#" class="logo-text">P U L S O S</a>
+            <div class="logo-sub">MEDICINA & BIENESTAR</div>
+        </div>
+        <nav class="d-none d-md-flex align-items-center">
+            <a th:href="@{/turnos}" class="nav-link-pulsos">Agenda de Turnos</a>
+            <a th:href="@{/pacientes}" class="nav-link-pulsos">Pacientes & Historias</a>
+            <a th:href="@{/usuarios}" class="nav-link-pulsos active">Profesionales / Usuarios</a>
+        </nav>
+        <div class="d-flex align-items-center">
+            <span class="small text-muted me-3">Usuario: <strong>admin</strong></span>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="font-size: 0.75rem; letter-spacing: 1px;">SALIR</button>
+            </form>
+        </div>
+    </header>
 
-            <!-- Username -->
-            <div class="mb-3">
-                <label for="username" class="form-label">Nombre de Usuario (Login)</label>
-                <input type="text" id="username" th:field="*{username}" class="form-control" required />
-            </div>
+    <!-- CUERPO DEL FORMULARIO -->
+    <div class="container" style="max-width: 800px;">
+        <div class="card-pulsos">
+            <h4 class="mb-4 pb-2 border-bottom text-uppercase fw-light" style="letter-spacing: 1px; color: #2c3e35;"
+                th:text="${esEdicion} ? 'Editar Profesional / Usuario' : 'Nuevo Profesional / Usuario'">
+                Formulario
+            </h4>
 
-            <!-- Contraseña -->
-            <div class="mb-3">
-                <label for="passwordPlana" class="form-label">Contraseña</label>
-                <input type="password" id="passwordPlana" name="passwordPlana" class="form-control" 
-                       th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener la actual' : 'Ingrese contraseña'" 
-                       th:required="${!esEdicion}" />
-                <div class="form-text" th:if="${esEdicion}">Si no deseas cambiar la contraseña, deja este campo vacío.</div>
-            </div>
+            <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post">
+                
+                <!-- IDs y Estados ocultos -->
+                <input type="hidden" th:field="*{id}" />
+                <input type="hidden" th:field="*{activo}" />
 
-            <!-- Nombre Completo -->
-            <div class="mb-3">
-                <label for="nombreCompleto" class="form-label">Nombre Completo</label>
-                <input type="text" id="nombreCompleto" th:field="*{nombreCompleto}" class="form-control" />
-            </div>
+                <div class="row">
+                    <!-- Username -->
+                    <div class="col-md-6 mb-3">
+                        <label for="username" class="form-label">Usuario (Login)</label>
+                        <input type="text" id="username" th:field="*{username}" class="form-control" required placeholder="ej. dr.santiago" />
+                    </div>
 
-            <!-- Email -->
-            <div class="mb-3">
-                <label for="email" class="form-label">Correo Electrónico</label>
-                <input type="email" id="email" th:field="*{email}" class="form-control" />
-            </div>
+                    <!-- Contraseña -->
+                    <div class="col-md-6 mb-3">
+                        <label for="passwordPlana" class="form-label">Contraseña</label>
+                        <input type="password" id="passwordPlana" name="passwordPlana" class="form-control" 
+                               th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener actual' : 'Ingrese contraseña'" 
+                               th:required="${!esEdicion}" />
+                        <div class="form-text text-muted small" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
+                    </div>
+                </div>
 
-            <!-- Teléfono -->
-            <div class="mb-3">
-                <label for="telefono" class="form-label">Teléfono</label>
-                <input type="text" id="telefono" th:field="*{telefono}" class="form-control" />
-            </div>
+                <div class="row">
+                    <!-- Nombre Completo -->
+                    <div class="col-md-6 mb-3">
+                        <label for="nombreCompleto" class="form-label">Nombre / Profesional</label>
+                        <input type="text" id="nombreCompleto" th:field="*{nombreCompleto}" class="form-control" placeholder="ej. Dr. Santiago Albarracín" />
+                    </div>
 
-            <!-- Campos exclusivos de Profesionales / Médicos -->
-            <div class="row">
-                <div class="col-md-6 mb-3">
+                    <!-- Email -->
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label">Correo Electrónico</label>
+                        <input type="email" id="email" th:field="*{email}" class="form-control" placeholder="correo@pulsosmedicina.com.ar" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Teléfono -->
+                    <div class="col-md-6 mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="text" id="telefono" th:field="*{telefono}" class="form-control" placeholder="Opcional" />
+                    </div>
+
+                    <!-- Matrícula -->
+                    <div class="col-md-6 mb-3">
+                        <label for="matricula" class="form-label">Matrícula</label>
+                        <input type="text" id="matricula" th:field="*{matricula}" class="form-control" placeholder="ej. MN 122.450" />
+                    </div>
+                </div>
+
+                <!-- Especialidad -->
+                <div class="mb-3">
                     <label for="especialidad" class="form-label">Especialidad</label>
-                    <input type="text" id="especialidad" th:field="*{especialidad}" class="form-control" />
+                    <input type="text" id="especialidad" th:field="*{especialidad}" class="form-control" placeholder="ej. Cardiología & Deportología" />
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="matricula" class="form-label">Matrícula</label>
-                    <input type="text" id="matricula" th:field="*{matricula}" class="form-control" />
-                </div>
-            </div>
 
-            <!-- Selección de Roles -->
-            <div class="mb-3">
-                <label class="form-label">Roles del Sistema</label>
-                <div th:each="rol : ${todosLosRoles}" class="form-check">
-                    <input class="form-check-input" type="checkbox" th:field="*{roles}" th:value="${rol}" th:id="${'rol_' + rol}">
-                    <label class="form-check-label" th:for="${'rol_' + rol}" th:text="${rol}"></label>
+                <!-- Selección de Roles -->
+                <div class="mb-4 p-3 bg-light rounded border">
+                    <label class="form-label mb-2 d-block">Roles Asignados en el Sistema</label>
+                    <div class="d-flex flex-wrap gap-4">
+                        <div th:each="rol : ${todosLosRoles}" class="form-check">
+                            <input class="form-check-input" type="checkbox" th:field="*{roles}" th:value="${rol}" th:id="${'rol_' + rol}">
+                            <label class="form-check-label text-secondary small fw-bold" th:for="${'rol_' + rol}" th:text="${rol}"></label>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Botones -->
-            <button type="submit" class="btn btn-success">Guardar</button>
-            <a th:href="@{/usuarios}" class="btn btn-secondary">Cancelar</a>
-        </form>
+                <!-- Botones de Acción -->
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a th:href="@{/usuarios}" class="btn btn-pulsos-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-pulsos-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
     </div>
+
 </body>
 </html>
