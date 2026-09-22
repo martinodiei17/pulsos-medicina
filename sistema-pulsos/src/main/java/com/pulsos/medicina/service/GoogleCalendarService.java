@@ -6,13 +6,14 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.AccessToken;
 import com.pulsos.medicina.model.Turno;
 import org.springframework.stereotype.Service;
 
-import java.security.GeneralSecurityException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.ZoneId;
-import java.util.Collections;
 
 @Service
 public class GoogleCalendarService {
@@ -21,14 +22,11 @@ public class GoogleCalendarService {
 
     public void agregarTurnoACalendar(Turno turno, String googleAccessToken) {
         try {
-            // Inicializar transporte y cliente de la API de Google
             com.google.api.client.http.HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
             
-            // Configurar credenciales usando el token OAuth del médico logueado
-            com.google.auth.http.HttpCredentialsAdapter credentialAdapter = 
-                new com.google.auth.http.HttpCredentialsAdapter(
-                    new com.google.auth.oauth2.AccessToken(googleAccessToken, null)
-                );
+            HttpCredentialsAdapter credentialAdapter = new HttpCredentialsAdapter(
+                new AccessToken(googleAccessToken, null)
+            );
 
             Calendar service = new Calendar.Builder(
                     httpTransport, 
@@ -37,21 +35,20 @@ public class GoogleCalendarService {
                     .setApplicationName(APPLICATION_NAME)
                     .build();
 
-            // Construir el evento de Google Calendar
+            // Usamos getNombre() y getApellido() asumiendo los métodos estándar del modelo Paciente
+            String nombrePaciente = turno.getPaciente() != null ? turno.getPaciente.getNombre() + " " + turno.getPaciente.getApellido() : "Sin paciente";
+
             Event event = new Event()
-                    .setSummary("Turno: " + turno.getMotivo() + " - Paciente: " + turno.getPaciente().getNombreApellido())
+                    .setSummary("Turno: " + turno.getMotivo() + " - Paciente: " + nombrePaciente)
                     .setDescription("Cita médica gestionada desde el sistema Pulsos.");
 
-            // Configurar fecha y hora de inicio (ej. duración estimada de 30 minutos)
             DateTime startDateTime = new DateTime(turno.getFechaHora().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
             event.setStart(new EventDateTime().setDateTime(startDateTime));
 
             DateTime endDateTime = new DateTime(turno.getFechaHora().plusMinutes(30).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
             event.setEnd(new EventDateTime().setDateTime(endDateTime));
 
-            // Insertar el evento en el calendario principal ("primary") del usuario
-            String calendarId = "primary";
-            service.events().insert(calendarId, event).execute();
+            service.events().insert("primary", event).execute();
 
         } catch (IOException | GeneralSecurityException e) {
             e.printStackTrace();
