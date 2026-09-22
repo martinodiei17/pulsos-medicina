@@ -1,54 +1,56 @@
 package com.pulsos.medicina.controller;
 
-import com.pulsos.medicina.model.Turno;
+import com.pulsos.medicina.model.Rol;
 import com.pulsos.medicina.model.Usuario;
-import com.pulsos.medicina.service.PacienteService;
-import com.pulsos.medicina.service.TurnoService;
 import com.pulsos.medicina.service.UsuarioService;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/turnos")
-public class TurnoController {
+@RequestMapping("/usuarios")
+public class UsuarioController {
 
-    private final TurnoService turnoService;
-    private final PacienteService pacienteService;
-    private final UsuarioService usuarioService;
-
-    public TurnoController(TurnoService turnoService, PacienteService pacienteService, UsuarioService usuarioService) {
-        this.turnoService = turnoService;
-        this.pacienteService = pacienteService;
-        this.usuarioService = usuarioService;
-    }
+    @Autowired
+    private UsuarioService usuarioService;
 
     @GetMapping
-    public String agenda(Model model, Authentication auth) {
-        model.addAttribute("turnos", turnoService.listarTodos());
-        model.addAttribute("turnosHoy", turnoService.listarTurnosHoy());
-        model.addAttribute("pacientes", pacienteService.listarTodos(null));
-        model.addAttribute("medicos", usuarioService.listarMedicos());
-        model.addAttribute("nuevoTurno", new Turno());
+    public String listarUsuarios(Model model) {
+        // Pasamos null como exige tu servicio en listarTodos(String)
+        model.addAttribute("usuarios", usuarioService.listarTodos(null));
+        return "usuarios/lista";
+    }
 
-        if (auth != null) {
-            Usuario usuarioActual = usuarioService.buscarPorUsername(auth.getName()).orElse(null);
-            model.addAttribute("usuarioActual", usuarioActual);
+    @GetMapping("/nuevo")
+    public String nuevoUsuario(Model model) {
+        model.addAttribute("usuario", new Usuario());
+        model.addAttribute("todosLosRoles", Rol.values());
+        model.addAttribute("esEdicion", false);
+        return "usuarios/formulario";
+    }
+
+    @GetMapping("/editar/{id}")
+    public String editarUsuario(@PathVariable Long id, Model model) {
+        try {
+            Usuario usuario = usuarioService.buscarPorId(id).orElse(null);
+            if (usuario == null) {
+                return "redirect:/usuarios";
+            }
+            model.addAttribute("usuario", usuario);
+            model.addAttribute("todosLosRoles", Rol.values());
+            model.addAttribute("esEdicion", true);
+            return "usuarios/formulario";
+        } catch (Exception e) {
+            return "redirect:/usuarios";
         }
-
-        return "turnos/agenda";
     }
 
-    @PostMapping("/agendar")
-    public String agendar(@RequestParam("pacienteId") Long pacienteId, @ModelAttribute Turno nuevoTurno) {
-        turnoService.agendarTurno(pacienteId, nuevoTurno);
-        return "redirect:/turnos";
-    }
-
-    @PostMapping("/{id}/estado")
-    public String cambiarEstado(@PathVariable Long id, @RequestParam("estado") String nuevoEstado) {
-        turnoService.actualizarEstado(id, nuevoEstado);
-        return "redirect:/turnos";
+    @PostMapping("/guardar")
+    public String guardarUsuario(@ModelAttribute Usuario usuario, @RequestParam(required = false) String passwordPlana) {
+        // Pasamos los dos argumentos que exige el método guardar de tu service
+        String passFinal = (passwordPlana != null && !passwordPlana.trim().isEmpty()) ? passwordPlana : null;
+        usuarioService.guardar(usuario, passFinal);
+        return "redirect:/usuarios";
     }
 }
