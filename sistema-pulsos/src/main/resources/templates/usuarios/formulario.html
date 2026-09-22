@@ -273,7 +273,7 @@
                     <span class="helper-text" th:if="${esEdicion != null and esEdicion}">Dejar en blanco para conservar la actual.</span>
                 </div>
 
-                <!-- Rol Asignado -->
+<!-- Rol Asignado -->
                 <div class="form-group">
                     <label for="rol">Rol Asignado</label>
                     <select id="rol" name="rol" required>
@@ -293,16 +293,16 @@
                         <label for="activo">Usuario / Profesional Activo en el Sistema</label>
                     </div>
                 </div>
-            </div> <!-- Cierre de .form-grid -->
+            </div> <!-- 1. Cierre correcto de .form-grid -->
 
-            <!-- Botones de Acción (El botón de guardar que faltaba mostrarse) -->
+            <!-- Botones de Acción -->
             <div class="actions">
                 <a href="/usuarios" class="btn btn-outline">← Volver</a>
                 <button type="submit" class="btn">Guardar Profesional</button>
             </div>
-        </form>
-    </div>
-</div>
+        </form> <!-- 2. Cierre correcto del <form> -->
+    </div> <!-- 3. Cierre correcto de .card-form -->
+</div> <!-- 4. Cierre correcto de .container -->
 
 </body>
 </html>
