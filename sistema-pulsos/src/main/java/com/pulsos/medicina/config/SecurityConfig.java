@@ -1,52 +1,94 @@
-package com.pulsos.medicina.service;
+package com.pulsos.medicina.config;
 
-import com.pulsos.medicina.model.Usuario;
-import com.pulsos.medicina.repository.UsuarioRepository;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
 
-@Service
-public class UserDetailsServiceImpl implements UserDetailsService {
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 
-    private final UsuarioRepository usuarioRepository;
+import org.springframework.context.annotation.Bean;
 
-    public UserDetailsServiceImpl(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+import org.springframework.context.annotation.Configuration;
+
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import org.springframework.security.web.SecurityFilterChain;
+
+
+
+@Configuration
+
+public class SecurityConfig {
+
+
+
+    @Bean
+
+    public PasswordEncoder passwordEncoder() {
+
+        return new BCryptPasswordEncoder();
+
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        List<GrantedAuthority> authorities = new ArrayList<>();
 
-        // Si el usuario es admin, le damos la autoridad ADMIN que exige el SecurityConfig
-        if ("admin".equals(usuario.getUsername())) {
-            authorities.add(new SimpleGrantedAuthority("ADMIN"));
-            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        } else {
-            // Para otros usuarios (como médicos o personal)
-            authorities.add(new SimpleGrantedAuthority("MEDICO"));
-            authorities.add(new SimpleGrantedAuthority("ROLE_MEDICO"));
-        }
+    @Bean
 
-        return new User(
-                usuario.getUsername(),
-                usuario.getPassword(),
-                usuario.isActivo(),
-                true,
-                true,
-                true,
-                authorities
-        );
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+        http
+
+            .authorizeHttpRequests(auth -> auth
+
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+
+                .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/api/calendario/**").permitAll()
+
+                .requestMatchers("/usuarios/**").hasAuthority("ADMIN")
+
+                .requestMatchers("/pacientes/*/consultas", "/pacientes/*/adjuntos", "/pacientes/adjuntos/*/eliminar").hasAnyAuthority("MEDICO", "ADMIN")
+
+                .requestMatchers("/pacientes/**", "/turnos/**").authenticated()
+
+                .anyRequest().authenticated()
+
+            )
+
+            .formLogin(form -> form
+
+                .loginPage("/login")
+
+                .loginProcessingUrl("/login")
+
+                .defaultSuccessUrl("/turnos", true)
+
+                .permitAll()
+
+            )
+
+            .logout(logout -> logout
+
+                .logoutSuccessUrl("/login?logout")
+
+                .permitAll()
+
+            )
+
+            .csrf(csrf -> csrf
+
+                .ignoringRequestMatchers("/api/calendario/**")
+
+            )
+
+            .headers(headers -> headers.frameOptions(f -> f.sameOrigin()));
+
+            
+
+        return http.build();
+
     }
-}
+
+} 
+
