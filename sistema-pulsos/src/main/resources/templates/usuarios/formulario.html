@@ -61,9 +61,9 @@
             color: #555;
         }
         
-        /* Contenedor principal estilo tarjeta de la imagen */
+        /* Contenedor principal alineado en columna */
         .content-wrapper {
-            max-width: 900px;
+            max-width: 850px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -72,11 +72,11 @@
             border: 1px solid #e5e0d8;
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.01);
-            padding: 35px;
+            padding: 40px;
             margin-bottom: 30px;
         }
         
-        /* Título de sección idéntico al estilo de evolución médica */
+        /* Título de sección */
         .section-title {
             font-family: "Georgia", serif;
             font-size: 1.1rem;
@@ -87,7 +87,7 @@
             margin-bottom: 25px;
         }
         
-        /* Estilo de campos idénticos al modelo de referencia */
+        /* Campos alineados en columna vertical */
         .field-group {
             margin-bottom: 20px;
         }
@@ -120,7 +120,7 @@
             margin-top: 5px;
         }
         
-        /* Botones institucionales exactos */
+        /* Botones institucionales */
         .btn-pulsos-guardar {
             background-color: #3b4d43;
             color: #ffffff;
@@ -191,43 +191,38 @@
                 <input type="hidden" th:field="*{id}" />
                 <input type="hidden" th:field="*{activo}" />
 
-                <div class="row">
-                    <div class="col-md-6 field-group">
-                        <label class="custom-label">Usuario (Login)</label>
-                        <input type="text" th:field="*{username}" class="custom-input" required placeholder="ej. dr.santiago" />
-                    </div>
-
-                    <div class="col-md-6 field-group">
-                        <label class="custom-label">Contraseña</label>
-                        <input type="password" name="passwordPlana" class="custom-input" 
-                               th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener la actual' : 'Ingrese contraseña'" 
-                               th:required="${!esEdicion}" />
-                        <div class="help-text" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
-                    </div>
+                <!-- Todos los campos ordenados en una columna vertical limpia -->
+                <div class="field-group">
+                    <label class="custom-label">Usuario (Login)</label>
+                    <input type="text" th:field="*{username}" class="custom-input" required placeholder="ej. dr.santiago" />
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 field-group">
-                        <label class="custom-label">Nombre / Profesional</label>
-                        <input type="text" th:field="*{nombreCompleto}" class="custom-input" placeholder="ej. Dr. Santiago Albarracín" />
-                    </div>
-
-                    <div class="col-md-6 field-group">
-                        <label class="custom-label">Correo Electrónico</label>
-                        <input type="email" th:field="*{email}" class="custom-input" placeholder="correo@pulsosmedicina.com.ar" />
-                    </div>
+                <div class="field-group">
+                    <label class="custom-label">Contraseña</label>
+                    <input type="password" name="passwordPlana" class="custom-input" 
+                           th:placeholder="${esEdicion} ? 'Dejar en blanco para mantener la actual' : 'Ingrese contraseña'" 
+                           th:required="${!esEdicion}" />
+                    <div class="help-text" th:if="${esEdicion}">No rellenar si no se desea modificar.</div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 field-group">
-                        <label class="custom-label">Teléfono</label>
-                        <input type="text" th:field="*{telefono}" class="custom-input" placeholder="Opcional" />
-                    </div>
+                <div class="field-group">
+                    <label class="custom-label">Nombre / Profesional</label>
+                    <input type="text" th:field="*{nombreCompleto}" class="custom-input" placeholder="ej. Dr. Santiago Albarracín" />
+                </div>
 
-                    <div class="col-md-6 field-group">
-                        <label class="custom-label">Matrícula</label>
-                        <input type="text" th:field="*{matricula}" class="custom-input" placeholder="ej. MN 122.450" />
-                    </div>
+                <div class="field-group">
+                    <label class="custom-label">Correo Electrónico</label>
+                    <input type="email" th:field="*{email}" class="custom-input" placeholder="correo@pulsosmedicina.com.ar" />
+                </div>
+
+                <div class="field-group">
+                    <label class="custom-label">Teléfono</label>
+                    <input type="text" th:field="*{telefono}" class="custom-input" placeholder="Opcional" />
+                </div>
+
+                <div class="field-group">
+                    <label class="custom-label">Matrícula</label>
+                    <input type="text" th:field="*{matricula}" class="custom-input" placeholder="ej. MN 122.450" />
                 </div>
 
                 <div class="field-group">
@@ -235,18 +230,16 @@
                     <input type="text" th:field="*{especialidad}" class="custom-input" placeholder="ej. Cardiología & Deportología" />
                 </div>
 
-                <!-- Roles asignados -->
-                <div class="field-group p-3 my-3" style="background-color: #faf8f5; border: 1px solid #eef2f0; border-radius: 4px;">
-                    <label class="custom-label mb-2">Roles asignados en el sistema</label>
-                    <div class="d-flex flex-wrap gap-4">
-                        <div th:each="rol : ${todosLosRoles}" class="form-check">
-                            <input class="form-check-input" type="checkbox" th:field="*{roles}" th:value="${rol}" th:id="${'rol_' + rol}">
-                            <label class="form-check-label" th:for="${'rol_' + rol}" th:text="${rol}" style="font-size: 0.8rem; font-weight: 600; color: #495057;"></label>
-                        </div>
-                    </div>
+                <!-- Roles convertidos en Combo Box (Select) -->
+                <div class="field-group">
+                    <label class="custom-label">Rol Asignado en el Sistema</label>
+                    <select th:field="*{roles}" class="custom-input" required>
+                        <option value="">Seleccione un rol...</option>
+                        <option th:each="rol : ${todosLosRoles}" th:value="${rol}" th:text="${rol}"></option>
+                    </select>
                 </div>
 
-                <!-- Botones de Acciónalineados a la derecha igual que en el modelo -->
+                <!-- Botones de Acción alineados a la derecha -->
                 <div class="d-flex justify-content-end gap-2 pt-3 mt-4 border-top" style="border-color: #e5e0d8 !important;">
                     <a th:href="@{/usuarios}" class="btn-pulsos-cancelar">Cancelar</a>
                     <button type="submit" class="btn-pulsos-guardar">Guardar Cambios</button>
