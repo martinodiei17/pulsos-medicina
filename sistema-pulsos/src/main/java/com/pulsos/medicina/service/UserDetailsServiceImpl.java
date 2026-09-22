@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,11 +27,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        // Asignamos una autoridad general de administrador o rol por defecto para evitar errores de métodos faltantes
-       List<GrantedAuthority> authorities = List.of(
-    new SimpleGrantedAuthority("ADMIN"),
-    new SimpleGrantedAuthority("ROLE_ADMIN")
-);
+        List<GrantedAuthority> authorities = new ArrayList<>();
+
+        // Si el usuario es admin, le damos la autoridad ADMIN que exige el SecurityConfig
+        if ("admin".equals(usuario.getUsername())) {
+            authorities.add(new SimpleGrantedAuthority("ADMIN"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        } else {
+            // Para otros usuarios (como médicos o personal)
+            authorities.add(new SimpleGrantedAuthority("MEDICO"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_MEDICO"));
+        }
 
         return new User(
                 usuario.getUsername(),
