@@ -8,6 +8,7 @@ import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.pulsos.medicina.model.Turno;
 import org.springframework.stereotype.Service;
 
@@ -24,9 +25,10 @@ public class GoogleCalendarService {
         try {
             com.google.api.client.http.HttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
             
-            HttpCredentialsAdapter credentialAdapter = new HttpCredentialsAdapter(
-                new AccessToken(googleAccessToken, null)
-            );
+            // Envolver el token de acceso en GoogleCredentials
+            AccessToken token = new AccessToken(googleAccessToken, null);
+            GoogleCredentials credentials = GoogleCredentials.create(token);
+            HttpCredentialsAdapter credentialAdapter = new HttpCredentialsAdapter(credentials);
 
             Calendar service = new Calendar.Builder(
                     httpTransport, 
@@ -35,8 +37,11 @@ public class GoogleCalendarService {
                     .setApplicationName(APPLICATION_NAME)
                     .build();
 
-            // Usamos getNombre() y getApellido() asumiendo los métodos estándar del modelo Paciente
-            String nombrePaciente = turno.getPaciente() != null ? turno.getPaciente.getNombre() + " " + turno.getPaciente.getApellido() : "Sin paciente";
+            // Corregido: Llamada correcta a los métodos getPaciente() con paréntesis
+            String nombrePaciente = "Sin paciente";
+            if (turno.getPaciente() != null) {
+                nombrePaciente = turno.getPaciente().getNombre() + " " + turno.getPaciente().getApellido();
+            }
 
             Event event = new Event()
                     .setSummary("Turno: " + turno.getMotivo() + " - Paciente: " + nombrePaciente)
