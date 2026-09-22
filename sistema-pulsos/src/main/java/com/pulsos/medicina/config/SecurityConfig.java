@@ -46,32 +46,34 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/api/calendario/**").permitAll()
-                .requestMatchers("/usuarios/**").hasRole("ADMIN")
-                .requestMatchers("/pacientes/*/consultas", "/pacientes/*/adjuntos", "/pacientes/adjuntos/*/eliminar").hasAnyRole("MEDICO", "ADMIN")
-                .requestMatchers("/pacientes/**", "/turnos/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/turnos", true)
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutSuccessUrl("/login?logout")
-                .permitAll()
-            )
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/calendario/**")
-            )
-            .headers(headers -> headers.frameOptions(f -> f.sameOrigin()));
-
-        return http.build();
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+            .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/api/calendario/**").permitAll()
+            // Cambiamos hasRole por hasAuthority para evitar problemas con el prefijo "ROLE_"
+            .requestMatchers("/usuarios/**").hasAuthority("ADMIN")
+            .requestMatchers("/pacientes/*/consultas", "/pacientes/*/adjuntos", "/pacientes/adjuntos/*/eliminar").hasAnyAuthority("MEDICO", "ADMIN")
+            .requestMatchers("/pacientes/**", "/turnos/**").authenticated()
+            .anyRequest().authenticated()
+        )
+        .formLogin(form -> form
+            .loginPage("/login")
+            .loginProcessingUrl("/login")
+            .defaultSuccessUrl("/turnos", true)
+            .permitAll()
+        )
+        .logout(logout -> logout
+            .logoutSuccessUrl("/login?logout")
+            .permitAll()
+        )
+        .csrf(csrf -> csrf
+            .ignoringRequestMatchers("/api/calendario/**")
+        )
+        .headers(headers -> headers.frameOptions(f -> f.sameOrigin()));
+        
+    return http.build();
+}
     }
 }
