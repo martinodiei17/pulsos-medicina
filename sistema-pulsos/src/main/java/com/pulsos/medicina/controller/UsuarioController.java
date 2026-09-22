@@ -17,8 +17,8 @@ public class UsuarioController {
 
     @GetMapping
     public String listarUsuarios(Model model) {
-        // Usamos findAll() por si tu servicio no usa listarTodos sin parámetros
-        model.addAttribute("usuarios", usuarioService.findAll());
+        // Pasamos null como exige tu servicio en listarTodos(String)
+        model.addAttribute("usuarios", usuarioService.listarTodos(null));
         return "usuarios/lista";
     }
 
@@ -47,9 +47,10 @@ public class UsuarioController {
     }
 
     @PostMapping("/guardar")
-    public String guardarUsuario(@ModelAttribute Usuario usuario) {
-        // Usamos el método guardar estándar que recibe solo la entidad
-        usuarioService.guardar(usuario);
+    public String guardarUsuario(@ModelAttribute Usuario usuario, @RequestParam(required = false) String passwordPlana) {
+        // Pasamos los dos argumentos que exige el método guardar de tu service
+        String passFinal = (passwordPlana != null && !passwordPlana.trim().isEmpty()) ? passwordPlana : null;
+        usuarioService.guardar(usuario, passFinal);
         return "redirect:/usuarios";
     }
 }
