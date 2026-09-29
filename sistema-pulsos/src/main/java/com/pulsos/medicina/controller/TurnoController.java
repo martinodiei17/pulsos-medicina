@@ -1,13 +1,10 @@
 package com.pulsos.medicina.controller;
 
 import com.pulsos.medicina.model.Turno;
-import com.pulsos.medicina.model.Usuario;
-import com.pulsos.medicina.service.PacienteService;
 import com.pulsos.medicina.service.TurnoService;
-import com.pulsos.medicina.service.UsuarioService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -15,40 +12,42 @@ import org.springframework.web.bind.annotation.*;
 public class TurnoController {
 
     private final TurnoService turnoService;
-    private final PacienteService pacienteService;
-    private final UsuarioService usuarioService;
 
-    public TurnoController(TurnoService turnoService, PacienteService pacienteService, UsuarioService usuarioService) {
+    public TurnoController(TurnoService turnoService) {
         this.turnoService = turnoService;
-        this.pacienteService = pacienteService;
-        this.usuarioService = usuarioService;
     }
 
-    @GetMapping
-    public String agenda(Model model, Authentication auth) {
-        model.addAttribute("turnos", turnoService.listarTodos());
-        model.addAttribute("turnosHoy", turnoService.listarTurnosHoy());
-        model.addAttribute("pacientes", pacienteService.listarTodos(null));
-        model.addAttribute("medicos", usuarioService.listarMedicos());
-        model.addAttribute("nuevoTurno", new Turno());
+    @PostMapping("/guardar")
+    @ResponseBody
+    public ResponseEntity<?> guardarTurno(@ModelAttribute Turno turno, Authentication authentication) {
+        try {
+            Turno nuevoTurno = turnoService.guardarTurno(turno);
+            
+            // Identificador o email del usuario logueado actual para disparar el calendario
+            String identificadorUsuario = (authentication != null) ? authentication.getName() : "default";
 
-        if (auth != null) {
-            Usuario usuarioActual = usuarioService.buscarPorUsername(auth.getName()).orElse(null);
-            model.addAttribute("usuarioActual", usuarioActual);
+            return ResponseEntity.ok().body(new TurnoRespuestaDto(true, nuevoTurno.getId(), identificadorUsuario, "Turno guardado correctamente"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new TurnoRespuestaDto(false, null, null, e.getMessage()));
+        }
+    }
+
+    public static class TurnoRespuestaDto {
+        private boolean success;
+        private Long idTurno;
+        private String identificador;
+        private String mensaje;
+
+        public TurnoRespuestaDto(boolean success, Long idTurno, String identificador, String mensaje) {
+            this.success = success;
+            this.idTurno = idTurno;
+            this.identificador = identificador;
+            this.mensaje = mensaje;
         }
 
-        return "turnos/agenda";
-    }
-
-    @PostMapping("/agendar")
-    public String agendar(@RequestParam("pacienteId") Long pacienteId, @ModelAttribute Turno nuevoTurno) {
-        turnoService.agendarTurno(pacienteId, nuevoTurno);
-        return "redirect:/turnos";
-    }
-
-    @PostMapping("/{id}/estado")
-    public String cambiarEstado(@PathVariable Long id, @RequestParam("estado") String nuevoEstado) {
-        turnoService.actualizarEstado(id, nuevoEstado);
-        return "redirect:/turnos";
+        public boolean isSuccess() { return success; }
+        public Long getIdTurno() { return idTurno; }
+        public String getIdentificador() { return identificador; }
+        public String getMensaje() { return mensaje; }
     }
 }
