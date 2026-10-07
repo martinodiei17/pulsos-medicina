@@ -1,19 +1,34 @@
-package com.pulsos.medicina.repository;
+package com.pulsos.medicina.service;
 
-import com.pulsos.medicina.model.Usuario;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import com.pulsos.medicina.model.Paciente;
+import com.pulsos.medicina.repository.PacienteRepository;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
-@Repository
-public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+@Service
+public class PacienteService {
 
-    Optional<Usuario> findByEmail(String email);
+    private final PacienteRepository pacienteRepository;
 
-    Optional<Usuario> findByUsername(String username);
+    public PacienteService(PacienteRepository pacienteRepository) {
+        this.pacienteRepository = pacienteRepository;
+    }
 
-    List<Usuario> findByNombreCompletoContainingIgnoreCaseOrUsernameContainingIgnoreCaseOrEspecialidadContainingIgnoreCase(
-            String nombreCompleto, String username, String especialidad);
+    public List<Paciente> findAll() {
+        return pacienteRepository.findAll();
+    }
+
+    public Paciente findById(Long id) {
+        return pacienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
+    }
+
+    public Paciente save(Paciente paciente) {
+        return pacienteRepository.save(paciente);
+    }
+
+    public void deleteById(Long id) {
+        pacienteRepository.deleteById(id);
+    }
 }
