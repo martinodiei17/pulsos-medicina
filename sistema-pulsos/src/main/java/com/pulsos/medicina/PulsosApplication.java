@@ -24,6 +24,11 @@ public class PulsosApplication {
 	CommandLineRunner initData(UsuarioRepository userRepo, PacienteRepository pacRepo, 
                               TurnoRepository turnoRepo, PasswordEncoder encoder) {
 		return args -> {
+            // La base ahora es persistente. Los datos iniciales solo se crean una vez.
+            if (userRepo.count() > 0 || pacRepo.count() > 0) {
+                return;
+            }
+
 			Usuario doc1 = new Usuario();
 			doc1.setUsername("medico");
 			doc1.setPassword(encoder.encode("medico123"));

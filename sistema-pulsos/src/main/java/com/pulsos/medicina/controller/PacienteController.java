@@ -60,6 +60,20 @@ public class PacienteController {
         Paciente paciente = pacienteService.buscarPorId(id);
         model.addAttribute("paciente", paciente);
         model.addAttribute("nuevaConsulta", new Consulta());
+        model.addAttribute("consultaEditando", null);
+        return "pacientes/historia-clinica";
+    }
+
+    @GetMapping("/{id}/consultas/{consultaId}/editar")
+    public String editarConsulta(@PathVariable Long id, @PathVariable Long consultaId, Model model) {
+        Paciente paciente = pacienteService.buscarPorId(id);
+        Consulta consulta = pacienteService.buscarConsultaPorId(consultaId);
+        if (!consulta.getPaciente().getId().equals(id)) {
+            throw new RuntimeException("La historia clínica no pertenece al paciente indicado");
+        }
+        model.addAttribute("paciente", paciente);
+        model.addAttribute("nuevaConsulta", consulta);
+        model.addAttribute("consultaEditando", consulta);
         return "pacientes/historia-clinica";
     }
 
@@ -70,6 +84,25 @@ public class PacienteController {
         }
         pacienteService.agregarConsulta(id, nuevaConsulta);
         return "redirect:/pacientes/" + id;
+    }
+
+    @PostMapping("/{id}/consultas/{consultaId}/editar")
+    public String actualizarConsulta(@PathVariable Long id, @PathVariable Long consultaId,
+                                     @ModelAttribute Consulta consulta) {
+        pacienteService.actualizarConsulta(id, consultaId, consulta);
+        return "redirect:/pacientes/" + id;
+    }
+
+    @PostMapping("/{id}/consultas/{consultaId}/eliminar")
+    public String eliminarConsulta(@PathVariable Long id, @PathVariable Long consultaId) {
+        pacienteService.eliminarConsulta(id, consultaId);
+        return "redirect:/pacientes/" + id;
+    }
+
+    @PostMapping("/{id}/eliminar")
+    public String eliminarPaciente(@PathVariable Long id) {
+        pacienteService.eliminarPaciente(id);
+        return "redirect:/pacientes";
     }
 
     @PostMapping("/{id}/adjuntos")

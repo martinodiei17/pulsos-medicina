@@ -50,6 +50,12 @@ public class UsuarioController {
         return "redirect:/usuarios";
     }
 
+    @PostMapping("/{id}/eliminar")
+    public String eliminar(@PathVariable Long id) {
+        usuarioService.eliminar(id);
+        return "redirect:/usuarios";
+    }
+
     @PostMapping("/{id}/estado")
     public String cambiarEstado(@PathVariable Long id, @RequestParam("activo") boolean activo) {
         usuarioService.cambiarEstado(id, activo);

@@ -256,6 +256,9 @@
                     </td>
                     <td>
                         <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">✏️ Editar</a>
+                        <form th:action="@{/usuarios/{id}/eliminar(id=${u.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que desea eliminar este profesional / usuario?');">
+                            <button type="submit" class="btn" style="padding: 6px 12px; font-size: 0.75rem; background: #A94442;">🗑️ Eliminar</button>
+                        </form>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(usuarios)}">

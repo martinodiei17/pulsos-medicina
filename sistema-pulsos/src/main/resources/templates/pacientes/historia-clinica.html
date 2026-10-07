@@ -548,8 +548,8 @@
 
     <main>
         <div class="panel" sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')">
-            <h3 class="panel-title">Registrar Nueva Evolución Médica</h3>
-            <form th:action="@{/pacientes/{id}/consultas(id=${paciente.id})}" th:object="${nuevaConsulta}" method="post">
+            <h3 class="panel-title" th:text="${consultaEditando != null} ? 'Editar Evolución Médica' : 'Registrar Nueva Evolución Médica'">Registrar Nueva Evolución Médica</h3>
+            <form th:action="${consultaEditando != null} ? @{/pacientes/{id}/consultas/{consultaId}/editar(id=${paciente.id},consultaId=${consultaEditando.id})} : @{/pacientes/{id}/consultas(id=${paciente.id})}" th:object="${nuevaConsulta}" method="post">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                     <div>
                         <label class="info-label">Médico Tratante</label>
@@ -567,8 +567,9 @@
                 <label class="info-label">Plan Terapéutico / Indicaciones / Receta</label>
                 <textarea th:field="*{tratamiento}" rows="2" placeholder="Prescripciones, dosis o estudios solicitados..."></textarea>
 
-                <div style="text-align: right;">
-                    <button type="submit" class="btn">Guardar Evolución</button>
+                <div style="text-align: right; display:flex; justify-content:flex-end; gap:8px;">
+                    <a th:if="${consultaEditando != null}" th:href="@{/pacientes/{id}(id=${paciente.id})}" class="btn btn-outline">Cancelar edición</a>
+                    <button type="submit" class="btn" th:text="${consultaEditando != null} ? 'Guardar Cambios' : 'Guardar Evolución'">Guardar Evolución</button>
                 </div>
             </form>
         </div>
@@ -680,6 +681,12 @@
                 <div th:if="${c.tratamiento != null && !c.tratamiento.isEmpty()}">
                     <span class="info-label">Plan Terapéutico / Indicaciones:</span>
                     <p style="font-size: 0.85rem; margin-top: 2px;" th:text="${c.tratamiento}">Detalle</p>
+                </div>
+                <div sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')" style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--arena-linea);">
+                    <a th:href="@{/pacientes/{id}/consultas/{consultaId}/editar(id=${paciente.id},consultaId=${c.id})}" class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem;">✏️ Editar</a>
+                    <form th:action="@{/pacientes/{id}/consultas/{consultaId}/eliminar(id=${paciente.id},consultaId=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que desea eliminar esta evolución de la historia clínica?');">
+                        <button type="submit" class="btn" style="padding:5px 10px; font-size:0.72rem; background:#A94442;">🗑️ Eliminar</button>
+                    </form>
                 </div>
             </div>
             <div th:if="${#lists.isEmpty(paciente.consultas)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 20px 0;">

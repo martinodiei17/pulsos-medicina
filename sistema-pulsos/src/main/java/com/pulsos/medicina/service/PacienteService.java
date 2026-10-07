@@ -48,13 +48,64 @@ public class PacienteService {
     }
 
     public Paciente guardar(Paciente paciente) {
+        if (paciente.getId() != null) {
+            Paciente existente = buscarPorId(paciente.getId());
+            existente.setNombreCompleto(paciente.getNombreCompleto());
+            existente.setDni(paciente.getDni());
+            existente.setFechaNacimiento(paciente.getFechaNacimiento());
+            existente.setTelefono(paciente.getTelefono());
+            existente.setEmail(paciente.getEmail());
+            existente.setObraSocial(paciente.getObraSocial());
+            existente.setNumeroAfiliado(paciente.getNumeroAfiliado());
+            existente.setGrupoSanguineo(paciente.getGrupoSanguineo());
+            existente.setAntecedentesMedicos(paciente.getAntecedentesMedicos());
+            existente.setAlergias(paciente.getAlergias());
+            return pacienteRepo.save(existente);
+        }
         return pacienteRepo.save(paciente);
+    }
+
+    public void eliminarPaciente(Long pacienteId) {
+        Paciente paciente = buscarPorId(pacienteId);
+        // Elimina también los archivos físicos asociados al paciente.
+        for (DocumentoAdjunto doc : paciente.getAdjuntos()) {
+            try {
+                Files.deleteIfExists(uploadDir.resolve(doc.getNombreArchivoAlmacenado()));
+            } catch (Exception ignored) {}
+        }
+        pacienteRepo.delete(paciente);
     }
 
     public void agregarConsulta(Long pacienteId, Consulta consulta) {
         Paciente paciente = buscarPorId(pacienteId);
         consulta.setPaciente(paciente);
         consultaRepo.save(consulta);
+    }
+
+    public Consulta buscarConsultaPorId(Long consultaId) {
+        return consultaRepo.findById(consultaId)
+                .orElseThrow(() -> new RuntimeException("Historia clínica no encontrada"));
+    }
+
+    public void actualizarConsulta(Long pacienteId, Long consultaId, Consulta datos) {
+        Consulta consulta = buscarConsultaPorId(consultaId);
+        if (!consulta.getPaciente().getId().equals(pacienteId)) {
+            throw new RuntimeException("La historia clínica no pertenece al paciente indicado");
+        }
+        consulta.setMedicoTratante(datos.getMedicoTratante());
+        consulta.setMatriculaMedico(datos.getMatriculaMedico());
+        consulta.setMotivo(datos.getMotivo());
+        consulta.setDiagnostico(datos.getDiagnostico());
+        consulta.setTratamiento(datos.getTratamiento());
+        consultaRepo.save(consulta);
+    }
+
+    public void eliminarConsulta(Long pacienteId, Long consultaId) {
+        Consulta consulta = buscarConsultaPorId(consultaId);
+        if (!consulta.getPaciente().getId().equals(pacienteId)) {
+            throw new RuntimeException("La historia clínica no pertenece al paciente indicado");
+        }
+        consultaRepo.delete(consulta);
     }
 
     public void adjuntarArchivo(Long pacienteId, MultipartFile file, String tipo, String descripcion, String usuario) throws IOException {

@@ -23,7 +23,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/css/**", "/images/**", "/h2-console/**", "/api/calendario/**").permitAll()
                 .requestMatchers("/usuarios/**").hasRole("ADMIN")
-                .requestMatchers("/pacientes/*/consultas", "/pacientes/*/adjuntos", "/pacientes/adjuntos/*/eliminar").hasAnyRole("MEDICO", "ADMIN")
+                .requestMatchers("/pacientes/*/consultas", "/pacientes/*/consultas/**", "/pacientes/*/adjuntos", "/pacientes/adjuntos/*/eliminar").hasAnyRole("MEDICO", "ADMIN")
                 .requestMatchers("/pacientes/**", "/turnos/**").authenticated()
                 .anyRequest().authenticated()
             )
