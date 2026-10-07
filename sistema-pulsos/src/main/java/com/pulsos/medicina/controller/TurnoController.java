@@ -23,16 +23,8 @@ public class TurnoController {
     }
 
     @PostMapping("/guardar")
-    public String guardarTurno(@ModelAttribute Turno turno, @RequestParam(value = "pacienteId", required = false) Long pacienteId) {
-        // Obtenemos el ID del paciente (ya sea enviado por parámetro o dentro del objeto Turno)
-        Long idPaciente = (pacienteId != null) ? pacienteId : 
-                          (turno.getPaciente() != null ? turno.getPaciente().getId() : null);
-
-        if (idPaciente != null) {
-            // Llamamos a agendarTurno que es el método existente en tu TurnoService
-            turnoService.agendarTurno(idPaciente, turno);
-        }
-
+    public String guardarTurno(@ModelAttribute Turno turno) {
+        turnoService.guardarTurno(turno);
         return "redirect:/turnos";
     }
 
