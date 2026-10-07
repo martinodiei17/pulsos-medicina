@@ -32,13 +32,23 @@ public class TurnoController {
     public String agenda(Model model, Authentication authentication) {
 
         model.addAttribute("nuevoTurno", new Turno());
-        model.addAttribute("pacientes", pacienteService.listarTodos());
+
+        // null = sin filtro, trae todos los pacientes
+        model.addAttribute("pacientes", pacienteService.listarTodos(null));
+
+        // Médicos activos
         model.addAttribute("medicos", usuarioService.listarMedicos());
+
+        // Todos los turnos
         model.addAttribute("turnos", turnoService.listarTodos());
 
+        // Usuario actualmente autenticado
         Usuario usuarioActual = null;
 
-        if (authentication != null && authentication.isAuthenticated()) {
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getName())) {
+
             usuarioActual = usuarioService
                     .buscarPorUsername(authentication.getName())
                     .orElse(null);
