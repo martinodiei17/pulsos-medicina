@@ -1,79 +1,304 @@
-package com.pulsos.medicina.controller;
+package com.pulsos.medicina.service;
 
-import com.pulsos.medicina.model.Turno;
-import com.pulsos.medicina.model.Usuario;
-import com.pulsos.medicina.service.PacienteService;
-import com.pulsos.medicina.service.TurnoService;
-import com.pulsos.medicina.service.UsuarioService;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import com.pulsos.medicina.model.Consulta;
+import com.pulsos.medicina.model.DocumentoAdjunto;
+import com.pulsos.medicina.model.Paciente;
+import com.pulsos.medicina.repository.ConsultaRepository;
+import com.pulsos.medicina.repository.DocumentoRepository;
+import com.pulsos.medicina.repository.PacienteRepository;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-@Controller
-@RequestMapping("/turnos")
-public class TurnoController {
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.*;
+import java.util.List;
+import java.util.UUID;
 
-    private final TurnoService turnoService;
-    private final PacienteService pacienteService;
-    private final UsuarioService usuarioService;
+@Service
+public class PacienteService {
 
-    public TurnoController(
-            TurnoService turnoService,
-            PacienteService pacienteService,
-            UsuarioService usuarioService) {
+    private final PacienteRepository pacienteRepo;
+    private final DocumentoRepository docRepo;
+    private final ConsultaRepository consultaRepo;
+    private final Path uploadDir = Paths.get("uploads");
 
-        this.turnoService = turnoService;
-        this.pacienteService = pacienteService;
-        this.usuarioService = usuarioService;
+    public PacienteService(
+            PacienteRepository pacienteRepo,
+            DocumentoRepository docRepo,
+            ConsultaRepository consultaRepo) {
+
+        this.pacienteRepo = pacienteRepo;
+        this.docRepo = docRepo;
+        this.consultaRepo = consultaRepo;
+
+        try {
+            Files.createDirectories(uploadDir);
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "No se pudo inicializar la carpeta de adjuntos",
+                    e
+            );
+        }
     }
 
-    @GetMapping
-    public String agenda(Model model, Authentication authentication) {
+    public List<Paciente> listarTodos(String busqueda) {
 
-        model.addAttribute("nuevoTurno", new Turno());
-
-        // PacienteService requiere el parámetro de búsqueda.
-        // null devuelve todos los pacientes.
-        model.addAttribute("pacientes", pacienteService.listarTodos(null));
-
-        // Profesionales médicos activos.
-        model.addAttribute("medicos", usuarioService.listarMedicos());
-
-        // Turnos registrados.
-        model.addAttribute("turnos", turnoService.listarTodos());
-
-        // Usuario actualmente autenticado.
-        Usuario usuarioActual = null;
-
-        if (authentication != null && authentication.isAuthenticated()) {
-            usuarioActual = usuarioService
-                    .buscarPorUsername(authentication.getName())
-                    .orElse(null);
+        if (busqueda != null && !busqueda.trim().isEmpty()) {
+            return pacienteRepo
+                    .findByNombreCompletoContainingIgnoreCaseOrDniContaining(
+                            busqueda.trim(),
+                            busqueda.trim()
+                    );
         }
 
-        model.addAttribute("usuarioActual", usuarioActual);
-
-        return "turnos/agenda";
+        return pacienteRepo.findAll();
     }
 
-    @PostMapping("/agendar")
-    public String agendarTurno(
-            @RequestParam("pacienteId") Long pacienteId,
-            @ModelAttribute("nuevoTurno") Turno turno) {
+    public Paciente buscarPorId(Long id) {
 
-        turnoService.agendarTurno(pacienteId, turno);
-
-        return "redirect:/turnos";
+        return pacienteRepo.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Paciente no encontrado"));
     }
 
-    @PostMapping("/{id}/estado")
-    public String actualizarEstado(
-            @PathVariable("id") Long id,
-            @RequestParam("estado") String estado) {
+    public Paciente guardar(Paciente paciente) {
 
-        turnoService.actualizarEstado(id, estado);
+        if (paciente.getId() != null) {
 
-        return "redirect:/turnos";
+            Paciente existente = buscarPorId(paciente.getId());
+
+            existente.setNombreCompleto(paciente.getNombreCompleto());
+            existente.setDni(paciente.getDni());
+            existente.setFechaNacimiento(paciente.getFechaNacimiento());
+            existente.setTelefono(paciente.getTelefono());
+            existente.setEmail(paciente.getEmail());
+            existente.setObraSocial(paciente.getObraSocial());
+            existente.setNumeroAfiliado(paciente.getNumeroAfiliado());
+            existente.setGrupoSanguineo(paciente.getGrupoSanguineo());
+            existente.setAntecedentesMedicos(
+                    paciente.getAntecedentesMedicos()
+            );
+            existente.setAlergias(paciente.getAlergias());
+
+            return pacienteRepo.save(existente);
+        }
+
+        return pacienteRepo.save(paciente);
+    }
+
+    public void eliminarPaciente(Long pacienteId) {
+
+        Paciente paciente = buscarPorId(pacienteId);
+
+        // Elimina también los archivos físicos asociados al paciente.
+        for (DocumentoAdjunto doc : paciente.getAdjuntos()) {
+            try {
+                Files.deleteIfExists(
+                        uploadDir.resolve(
+                                doc.getNombreArchivoAlmacenado()
+                        )
+                );
+            } catch (Exception ignored) {
+            }
+        }
+
+        pacienteRepo.delete(paciente);
+    }
+
+    public void agregarConsulta(
+            Long pacienteId,
+            Consulta consulta) {
+
+        Paciente paciente = buscarPorId(pacienteId);
+
+        consulta.setPaciente(paciente);
+
+        consultaRepo.save(consulta);
+    }
+
+    public Consulta buscarConsultaPorId(Long consultaId) {
+
+        return consultaRepo.findById(consultaId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Historia clínica no encontrada"
+                        ));
+    }
+
+    public void actualizarConsulta(
+            Long pacienteId,
+            Long consultaId,
+            Consulta datos) {
+
+        Consulta consulta = buscarConsultaPorId(consultaId);
+
+        if (!consulta.getPaciente()
+                .getId()
+                .equals(pacienteId)) {
+
+            throw new RuntimeException(
+                    "La historia clínica no pertenece al paciente indicado"
+            );
+        }
+
+        consulta.setMedicoTratante(datos.getMedicoTratante());
+        consulta.setMatriculaMedico(datos.getMatriculaMedico());
+        consulta.setMotivo(datos.getMotivo());
+        consulta.setDiagnostico(datos.getDiagnostico());
+        consulta.setTratamiento(datos.getTratamiento());
+
+        consultaRepo.save(consulta);
+    }
+
+    public void eliminarConsulta(
+            Long pacienteId,
+            Long consultaId) {
+
+        Consulta consulta = buscarConsultaPorId(consultaId);
+
+        if (!consulta.getPaciente()
+                .getId()
+                .equals(pacienteId)) {
+
+            throw new RuntimeException(
+                    "La historia clínica no pertenece al paciente indicado"
+            );
+        }
+
+        consultaRepo.delete(consulta);
+    }
+
+    public void adjuntarArchivo(
+            Long pacienteId,
+            MultipartFile file,
+            String tipo,
+            String descripcion,
+            String usuario) throws IOException {
+
+        if (file.isEmpty()) {
+            return;
+        }
+
+        Paciente paciente = buscarPorId(pacienteId);
+
+        String originalName = file.getOriginalFilename();
+
+        String extension = "";
+
+        if (originalName != null &&
+                originalName.contains(".")) {
+
+            extension = originalName.substring(
+                    originalName.lastIndexOf(".")
+            );
+        }
+
+        String storedName =
+                UUID.randomUUID() + extension;
+
+        Path targetPath =
+                this.uploadDir.resolve(storedName);
+
+        Files.copy(
+                file.getInputStream(),
+                targetPath,
+                StandardCopyOption.REPLACE_EXISTING
+        );
+
+        DocumentoAdjunto adjunto =
+                new DocumentoAdjunto();
+
+        adjunto.setNombreArchivoOriginal(originalName);
+        adjunto.setNombreArchivoAlmacenado(storedName);
+        adjunto.setTipoDocumento(tipo);
+
+        adjunto.setDescripcion(
+                descripcion != null &&
+                !descripcion.trim().isEmpty()
+                        ? descripcion.trim()
+                        : originalName
+        );
+
+        adjunto.setContentType(file.getContentType());
+        adjunto.setTamanio(file.getSize());
+
+        adjunto.setSubidoPor(
+                usuario != null
+                        ? usuario
+                        : "Sistema"
+        );
+
+        adjunto.setPaciente(paciente);
+
+        docRepo.save(adjunto);
+    }
+
+    public Resource cargarArchivoComoRecurso(
+            String storedName) {
+
+        try {
+
+            Path filePath =
+                    this.uploadDir
+                            .resolve(storedName)
+                            .normalize();
+
+            Resource resource =
+                    new UrlResource(
+                            filePath.toUri()
+                    );
+
+            if (resource.exists() ||
+                    resource.isReadable()) {
+
+                return resource;
+
+            } else {
+
+                throw new RuntimeException(
+                        "Archivo no legible"
+                );
+            }
+
+        } catch (MalformedURLException e) {
+
+            throw new RuntimeException(
+                    "Ruta no válida",
+                    e
+            );
+        }
+    }
+
+    public DocumentoAdjunto buscarDocumentoPorId(
+            Long id) {
+
+        return docRepo.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Documento no encontrado"
+                        ));
+    }
+
+    public void eliminarDocumento(Long docId) {
+
+        DocumentoAdjunto doc =
+                buscarDocumentoPorId(docId);
+
+        try {
+
+            Path file =
+                    this.uploadDir.resolve(
+                            doc.getNombreArchivoAlmacenado()
+                    );
+
+            Files.deleteIfExists(file);
+
+        } catch (Exception ignored) {
+        }
+
+        docRepo.delete(doc);
     }
 }
