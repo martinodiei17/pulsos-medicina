@@ -20,9 +20,12 @@ public class TurnoService {
 
     private final TurnoRepository turnoRepo;
     private final PacienteRepository pacienteRepo;
-    private final UsuarioRepository usuarioRepo; // Añadido para buscar al usuario logueado
+    private final UsuarioRepository usuarioRepo;
 
-    public TurnoService(TurnoRepository turnoRepo, PacienteRepository pacienteRepo, UsuarioRepository usuarioRepo) {
+    public TurnoService(
+            TurnoRepository turnoRepo,
+            PacienteRepository pacienteRepo,
+            UsuarioRepository usuarioRepo) {
         this.turnoRepo = turnoRepo;
         this.pacienteRepo = pacienteRepo;
         this.usuarioRepo = usuarioRepo;
@@ -35,38 +38,61 @@ public class TurnoService {
     public List<Turno> listarTurnosHoy() {
         LocalDateTime start = LocalDate.now().atStartOfDay();
         LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
+
         return turnoRepo.findByFechaHoraBetweenOrderByFechaHoraAsc(start, end);
     }
 
     public Turno agendarTurno(Long pacienteId, Turno turno) {
+
         Paciente paciente = pacienteRepo.findById(pacienteId)
                 .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
+
         turno.setPaciente(paciente);
 
-        // 1. Obtenemos el usuario autenticado actual desde el contexto de seguridad
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            String usernameOrEmail = auth.getName();
-            
-            // 2. Buscamos al usuario en la base de datos (dependiendo de si usás email o username)
-            Usuario usuarioLogueado = usuarioRepo.findByEmail(usernameOrEmail)
-                    .orElseGet(() -> usuarioRepo.findByUsername(usernameOrEmail).orElse(null));
+        Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
 
-            // 3. Si tu entidad Turno tiene un campo para relacionarlo al usuario/medico, lo asignás acá:
-            // Por ejemplo: turno.setUsuario(usuarioLogueado); o turno.setMedico(usuarioLogueado);
-            if (usuarioLogueado != null) {
-                // Descomentá y ajustá el método según cómo se llame en tu entidad Turno.java (ej: setUsuario / setMedico)
-                // turno.setUsuario(usuarioLogueado);
-            }
+        if (auth != null
+                && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getName())) {
+
+            String usernameOrEmail = auth.getName();
+
+            Usuario usuarioLogueado = usuarioRepo
+                    .findByEmail(usernameOrEmail)
+                    .orElseGet(() ->
+                            usuarioRepo.findByUsername(usernameOrEmail)
+                                    .orElse(null));
+
+            /*
+             * Si en el futuro Turno tiene una relación directa
+             * con Usuario/Profesional, puede asignarse acá.
+             */
+        }
+
+        return turnoRepo.save(turno);
+    }
+
+    /**
+     * Guarda un turno ya construido.
+     * Este método es utilizado por TurnoController.
+     */
+    public Turno guardarTurno(Turno turno) {
+        if (turno == null) {
+            throw new IllegalArgumentException("El turno no puede ser nulo");
         }
 
         return turnoRepo.save(turno);
     }
 
     public void actualizarEstado(Long turnoId, String nuevoEstado) {
+
         Turno turno = turnoRepo.findById(turnoId)
-                .orElseThrow(() -> new RuntimeException("Turno no encontrado"));
+                .orElseThrow(() ->
+                        new RuntimeException("Turno no encontrado"));
+
         turno.setEstado(nuevoEstado);
+
         turnoRepo.save(turno);
     }
 }
