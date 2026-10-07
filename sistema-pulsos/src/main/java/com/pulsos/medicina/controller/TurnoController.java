@@ -1,10 +1,13 @@
 package com.pulsos.medicina.controller;
 
 import com.pulsos.medicina.model.Turno;
+import com.pulsos.medicina.model.Usuario;
+import com.pulsos.medicina.service.PacienteService;
 import com.pulsos.medicina.service.TurnoService;
-import org.springframework.http.ResponseEntity;
+import com.pulsos.medicina.service.UsuarioService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -12,42 +15,57 @@ import org.springframework.web.bind.annotation.*;
 public class TurnoController {
 
     private final TurnoService turnoService;
+    private final PacienteService pacienteService;
+    private final UsuarioService usuarioService;
 
-    public TurnoController(TurnoService turnoService) {
+    public TurnoController(
+            TurnoService turnoService,
+            PacienteService pacienteService,
+            UsuarioService usuarioService) {
+
         this.turnoService = turnoService;
+        this.pacienteService = pacienteService;
+        this.usuarioService = usuarioService;
     }
 
-    @PostMapping("/guardar")
-    @ResponseBody
-    public ResponseEntity<?> guardarTurno(@ModelAttribute Turno turno, Authentication authentication) {
-        try {
-            Turno nuevoTurno = turnoService.guardarTurno(turno);
-            
-            // Identificador o email del usuario logueado actual para disparar el calendario
-            String identificadorUsuario = (authentication != null) ? authentication.getName() : "default";
+    @GetMapping
+    public String agenda(Model model, Authentication authentication) {
 
-            return ResponseEntity.ok().body(new TurnoRespuestaDto(true, nuevoTurno.getId(), identificadorUsuario, "Turno guardado correctamente"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new TurnoRespuestaDto(false, null, null, e.getMessage()));
+        model.addAttribute("nuevoTurno", new Turno());
+        model.addAttribute("pacientes", pacienteService.listarTodos());
+        model.addAttribute("medicos", usuarioService.listarMedicos());
+        model.addAttribute("turnos", turnoService.listarTodos());
+
+        Usuario usuarioActual = null;
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            usuarioActual = usuarioService
+                    .buscarPorUsername(authentication.getName())
+                    .orElse(null);
         }
+
+        model.addAttribute("usuarioActual", usuarioActual);
+
+        return "turnos/agenda";
     }
 
-    public static class TurnoRespuestaDto {
-        private boolean success;
-        private Long idTurno;
-        private String identificador;
-        private String mensaje;
+    @PostMapping("/agendar")
+    public String agendarTurno(
+            @RequestParam("pacienteId") Long pacienteId,
+            @ModelAttribute("nuevoTurno") Turno turno) {
 
-        public TurnoRespuestaDto(boolean success, Long idTurno, String identificador, String mensaje) {
-            this.success = success;
-            this.idTurno = idTurno;
-            this.identificador = identificador;
-            this.mensaje = mensaje;
-        }
+        turnoService.agendarTurno(pacienteId, turno);
 
-        public boolean isSuccess() { return success; }
-        public Long getIdTurno() { return idTurno; }
-        public String getIdentificador() { return identificador; }
-        public String getMensaje() { return mensaje; }
+        return "redirect:/turnos";
+    }
+
+    @PostMapping("/{id}/estado")
+    public String actualizarEstado(
+            @PathVariable("id") Long id,
+            @RequestParam("estado") String estado) {
+
+        turnoService.actualizarEstado(id, estado);
+
+        return "redirect:/turnos";
     }
 }
