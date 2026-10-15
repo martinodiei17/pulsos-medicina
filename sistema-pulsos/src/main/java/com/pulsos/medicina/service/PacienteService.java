@@ -1,3 +1,166 @@
+
+package com.pulsos.medicina.service;
+
+import com.pulsos.medicina.model.Consulta;
+import com.pulsos.medicina.model.DocumentoAdjunto;
+import com.pulsos.medicina.model.Paciente;
+import com.pulsos.medicina.repository.ConsultaRepository;
+import com.pulsos.medicina.repository.DocumentoRepository;
+import com.pulsos.medicina.repository.PacienteRepository;
+
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class PacienteService {
+
+    private final PacienteRepository pacienteRepo;
+    private final DocumentoRepository docRepo;
+    private final ConsultaRepository consultaRepo;
+
+    private final Path uploadDir = Paths.get("uploads");
+
+    public PacienteService(
+            PacienteRepository pacienteRepo,
+            DocumentoRepository docRepo,
+            ConsultaRepository consultaRepo) {
+
+        this.pacienteRepo = pacienteRepo;
+        this.docRepo = docRepo;
+        this.consultaRepo = consultaRepo;
+
+        try {
+            Files.createDirectories(uploadDir);
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "No se pudo inicializar la carpeta de adjuntos", e);
+        }
+    }
+
+    public List<Paciente> listarTodos(String busqueda) {
+
+        if (busqueda != null && !busqueda.trim().isEmpty()) {
+            return pacienteRepo
+                    .findByNombreCompletoContainingIgnoreCaseOrDniContaining(
+                            busqueda.trim(),
+                            busqueda.trim()
+                    );
+        }
+
+        return pacienteRepo.findAll();
+    }
+
+    public Paciente buscarPorId(Long id) {
+
+        return pacienteRepo.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Paciente no encontrado"));
+    }
+
+    public Paciente guardar(Paciente paciente) {
+
+        if (paciente.getId() != null) {
+
+            Paciente existente = buscarPorId(paciente.getId());
+
+            existente.setNombreCompleto(paciente.getNombreCompleto());
+            existente.setDni(paciente.getDni());
+            existente.setFechaNacimiento(paciente.getFechaNacimiento());
+            existente.setTelefono(paciente.getTelefono());
+            existente.setEmail(paciente.getEmail());
+            existente.setObraSocial(paciente.getObraSocial());
+            existente.setNumeroAfiliado(paciente.getNumeroAfiliado());
+            existente.setGrupoSanguineo(paciente.getGrupoSanguineo());
+            existente.setAntecedentesMedicos(
+                    paciente.getAntecedentesMedicos()
+            );
+            existente.setAlergias(paciente.getAlergias());
+
+            return pacienteRepo.save(existente);
+        }
+
+        return pacienteRepo.save(paciente);
+    }
+
+    @Transactional
+    public void eliminarPaciente(Long pacienteId) {
+
+        Paciente paciente = buscarPorId(pacienteId);
+
+        List<String> archivos = new ArrayList<>();
+
+        for (DocumentoAdjunto doc : paciente.getAdjuntos()) {
+            archivos.add(doc.getNombreArchivoAlmacenado());
+        }
+
+        pacienteRepo.delete(paciente);
+        pacienteRepo.flush();
+
+        if (TransactionSynchronizationManager
+                .isSynchronizationActive()) {
+
+            TransactionSynchronizationManager
+                    .registerSynchronization(
+                            new TransactionSynchronization() {
+
+                                @Override
+                                public void afterCommit() {
+
+                                    for (String nombre : archivos) {
+                                        try {
+                                            Files.deleteIfExists(
+                                                    uploadDir.resolve(nombre)
+                                            );
+                                        } catch (IOException e) {
+                                            System.err.println(
+                                                    "No se pudo eliminar el archivo: "
+                                                            + nombre
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                    );
+        }
+    }
+
+    public void agregarConsulta(
+            Long pacienteId,
+            Consulta consulta) {
+
+        Paciente paciente = buscarPorId(pacienteId);
+
+        consulta.setPaciente(paciente);
+
+        consultaRepo.save(consulta);
+    }
+
+    public Consulta buscarConsultaPorId(Long consultaId) {
+
+        return consultaRepo.findById(consultaId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Historia clínica no encontrada"
+                        ));
+    }
+
+    public void actualizarConsulta(
+            Long pacienteId,
+            Long consultaId,
+            Consulta datos) {
+
         Consulta consulta = buscarConsultaPorId(consultaId);
 
         if (!consulta.getPaciente()
@@ -50,7 +213,28 @@
         Paciente paciente = buscarPorId(pacienteId);
 
         String originalName = file.getOriginalFilename();
-        String storedName = storage.subir(file);
+
+        String extension = "";
+
+        if (originalName != null &&
+                originalName.contains(".")) {
+
+            extension = originalName.substring(
+                    originalName.lastIndexOf(".")
+            );
+        }
+
+        String storedName =
+                UUID.randomUUID() + extension;
+
+        Path targetPath =
+                this.uploadDir.resolve(storedName);
+
+        Files.copy(
+                file.getInputStream(),
+                targetPath,
+                StandardCopyOption.REPLACE_EXISTING
+        );
 
         DocumentoAdjunto adjunto =
                 new DocumentoAdjunto();
@@ -61,7 +245,7 @@
 
         adjunto.setDescripcion(
                 descripcion != null &&
-                !descripcion.trim().isEmpty()
+                        !descripcion.trim().isEmpty()
                         ? descripcion.trim()
                         : originalName
         );
@@ -77,16 +261,34 @@
 
         adjunto.setPaciente(paciente);
 
-        try {
-            docRepo.saveAndFlush(adjunto);
-        } catch (RuntimeException e) {
-            storage.eliminar(storedName);
-            throw e;
-        }
+        docRepo.save(adjunto);
     }
 
-    public Resource cargarArchivoComoRecurso(String storedName) {
-        return new ByteArrayResource(storage.descargar(storedName));
+    public Resource cargarArchivoComoRecurso(
+            String storedName) {
+
+        try {
+
+            Path filePath =
+                    this.uploadDir
+                            .resolve(storedName)
+                            .normalize();
+
+            Resource resource =
+                    new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                return resource;
+            }
+
+            throw new RuntimeException("Archivo no legible");
+
+        } catch (MalformedURLException e) {
+
+            throw new RuntimeException(
+                    "Ruta no válida", e
+            );
+        }
     }
 
     public DocumentoAdjunto buscarDocumentoPorId(
@@ -99,21 +301,23 @@
                         ));
     }
 
-    @Transactional
     public void eliminarDocumento(Long docId) {
-        DocumentoAdjunto doc = buscarDocumentoPorId(docId);
-        String nombre = doc.getNombreArchivoAlmacenado();
+
+        DocumentoAdjunto doc =
+                buscarDocumentoPorId(docId);
+
+        try {
+
+            Path file =
+                    this.uploadDir.resolve(
+                            doc.getNombreArchivoAlmacenado()
+                    );
+
+            Files.deleteIfExists(file);
+
+        } catch (Exception ignored) {
+        }
+
         docRepo.delete(doc);
-        docRepo.flush();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                try {
-                    storage.eliminar(nombre);
-                } catch (Exception e) {
-                    System.err.println("No se pudo eliminar archivo R2: " + nombre);
-                }
-            }
-        });
     }
 }
