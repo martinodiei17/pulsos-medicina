@@ -1,3 +1,4 @@
+
 package com.pulsos.medicina.service;
 
 import com.pulsos.medicina.model.Consulta;
@@ -6,14 +7,19 @@ import com.pulsos.medicina.model.Paciente;
 import com.pulsos.medicina.repository.ConsultaRepository;
 import com.pulsos.medicina.repository.DocumentoRepository;
 import com.pulsos.medicina.repository.PacienteRepository;
+
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +29,7 @@ public class PacienteService {
     private final PacienteRepository pacienteRepo;
     private final DocumentoRepository docRepo;
     private final ConsultaRepository consultaRepo;
+
     private final Path uploadDir = Paths.get("uploads");
 
     public PacienteService(
@@ -38,9 +45,7 @@ public class PacienteService {
             Files.createDirectories(uploadDir);
         } catch (IOException e) {
             throw new RuntimeException(
-                    "No se pudo inicializar la carpeta de adjuntos",
-                    e
-            );
+                    "No se pudo inicializar la carpeta de adjuntos", e);
         }
     }
 
@@ -89,23 +94,53 @@ public class PacienteService {
         return pacienteRepo.save(paciente);
     }
 
+    @Transactional
     public void eliminarPaciente(Long pacienteId) {
 
         Paciente paciente = buscarPorId(pacienteId);
 
-        // Elimina también los archivos físicos asociados al paciente.
+        // Cargar los nombres de los archivos mientras
+        // la sesion de Hibernate permanece abierta.
+        List<String> archivos = new ArrayList<>();
+
         for (DocumentoAdjunto doc : paciente.getAdjuntos()) {
-            try {
-                Files.deleteIfExists(
-                        uploadDir.resolve(
-                                doc.getNombreArchivoAlmacenado()
-                        )
-                );
-            } catch (Exception ignored) {
-            }
+            archivos.add(doc.getNombreArchivoAlmacenado());
         }
 
+        // Eliminar al paciente en la base de datos.
+        // flush permite detectar errores de integridad
+        // antes de programar la limpieza de archivos.
         pacienteRepo.delete(paciente);
+        pacienteRepo.flush();
+
+        // Los archivos fisicos se eliminan solamente
+        // despues de confirmar la transaccion.
+        if (TransactionSynchronizationManager
+                .isSynchronizationActive()) {
+
+            TransactionSynchronizationManager
+                    .registerSynchronization(
+                        new TransactionSynchronization() {
+
+                            @Override
+                            public void afterCommit() {
+
+                                for (String nombre : archivos) {
+                                    try {
+                                        Files.deleteIfExists(
+                                                uploadDir.resolve(nombre)
+                                        );
+                                    } catch (IOException e) {
+                                        System.err.println(
+                                                "No se pudo eliminar el archivo: "
+                                                + nombre
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    );
+        }
     }
 
     public void agregarConsulta(
@@ -247,27 +282,18 @@ public class PacienteService {
                             .normalize();
 
             Resource resource =
-                    new UrlResource(
-                            filePath.toUri()
-                    );
+                    new UrlResource(filePath.toUri());
 
-            if (resource.exists() ||
-                    resource.isReadable()) {
-
+            if (resource.exists() && resource.isReadable()) {
                 return resource;
-
-            } else {
-
-                throw new RuntimeException(
-                        "Archivo no legible"
-                );
             }
+
+            throw new RuntimeException("Archivo no legible");
 
         } catch (MalformedURLException e) {
 
             throw new RuntimeException(
-                    "Ruta no válida",
-                    e
+                    "Ruta no válida", e
             );
         }
     }
