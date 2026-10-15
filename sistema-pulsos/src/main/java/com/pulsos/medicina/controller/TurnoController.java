@@ -1,3 +1,4 @@
+
 package com.pulsos.medicina.controller;
 
 import com.pulsos.medicina.model.Turno;
@@ -5,6 +6,7 @@ import com.pulsos.medicina.model.Usuario;
 import com.pulsos.medicina.service.PacienteService;
 import com.pulsos.medicina.service.TurnoService;
 import com.pulsos.medicina.service.UsuarioService;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,33 +30,54 @@ public class TurnoController {
         this.usuarioService = usuarioService;
     }
 
-    @GetMapping
-    public String agenda(Model model, Authentication authentication) {
+    private void cargarDatosAgenda(
+            Model model,
+            Authentication authentication) {
 
-        model.addAttribute("nuevoTurno", new Turno());
+        model.addAttribute(
+                "pacientes",
+                pacienteService.listarTodos(null));
 
-        // null = sin filtro, trae todos los pacientes
-        model.addAttribute("pacientes", pacienteService.listarTodos(null));
+        model.addAttribute(
+                "medicos",
+                usuarioService.listarMedicos());
 
-        // Médicos activos
-        model.addAttribute("medicos", usuarioService.listarMedicos());
+        model.addAttribute(
+                "turnos",
+                turnoService.listarTodos());
 
-        // Todos los turnos
-        model.addAttribute("turnos", turnoService.listarTodos());
-
-        // Usuario actualmente autenticado
         Usuario usuarioActual = null;
 
         if (authentication != null
                 && authentication.isAuthenticated()
-                && !"anonymousUser".equals(authentication.getName())) {
+                && !"anonymousUser".equals(
+                        authentication.getName())) {
 
             usuarioActual = usuarioService
-                    .buscarPorUsername(authentication.getName())
+                    .buscarPorUsername(
+                            authentication.getName())
                     .orElse(null);
         }
 
-        model.addAttribute("usuarioActual", usuarioActual);
+        model.addAttribute(
+                "usuarioActual",
+                usuarioActual);
+    }
+
+    @GetMapping
+    public String agenda(
+            Model model,
+            Authentication authentication) {
+
+        cargarDatosAgenda(model, authentication);
+
+        model.addAttribute(
+                "nuevoTurno",
+                new Turno());
+
+        model.addAttribute(
+                "modoEdicion",
+                false);
 
         return "turnos/agenda";
     }
@@ -64,7 +87,54 @@ public class TurnoController {
             @RequestParam("pacienteId") Long pacienteId,
             @ModelAttribute("nuevoTurno") Turno turno) {
 
-        turnoService.agendarTurno(pacienteId, turno);
+        turnoService.agendarTurno(
+                pacienteId, turno);
+
+        return "redirect:/turnos";
+    }
+
+    @GetMapping("/{id}/editar")
+    public String formularioEditar(
+            @PathVariable("id") Long id,
+            Model model,
+            Authentication authentication) {
+
+        Turno turno = turnoService.buscarPorId(id);
+
+        cargarDatosAgenda(model, authentication);
+
+        model.addAttribute(
+                "nuevoTurno",
+                turno);
+
+        model.addAttribute(
+                "modoEdicion",
+                true);
+
+        model.addAttribute(
+                "turnoEditandoId",
+                id);
+
+        return "turnos/agenda";
+    }
+
+    @PostMapping("/{id}/editar")
+    public String editarTurno(
+            @PathVariable("id") Long id,
+            @RequestParam("pacienteId") Long pacienteId,
+            @ModelAttribute("nuevoTurno") Turno datos) {
+
+        turnoService.editarTurno(
+                id, pacienteId, datos);
+
+        return "redirect:/turnos";
+    }
+
+    @PostMapping("/{id}/eliminar")
+    public String eliminarTurno(
+            @PathVariable("id") Long id) {
+
+        turnoService.eliminarTurno(id);
 
         return "redirect:/turnos";
     }

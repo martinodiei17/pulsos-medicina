@@ -1,14 +1,13 @@
+
 package com.pulsos.medicina.service;
 
 import com.pulsos.medicina.model.Paciente;
 import com.pulsos.medicina.model.Turno;
-import com.pulsos.medicina.model.Usuario;
 import com.pulsos.medicina.repository.PacienteRepository;
 import com.pulsos.medicina.repository.TurnoRepository;
 import com.pulsos.medicina.repository.UsuarioRepository;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +25,7 @@ public class TurnoService {
             TurnoRepository turnoRepo,
             PacienteRepository pacienteRepo,
             UsuarioRepository usuarioRepo) {
+
         this.turnoRepo = turnoRepo;
         this.pacienteRepo = pacienteRepo;
         this.usuarioRepo = usuarioRepo;
@@ -39,57 +39,96 @@ public class TurnoService {
         LocalDateTime start = LocalDate.now().atStartOfDay();
         LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
 
-        return turnoRepo.findByFechaHoraBetweenOrderByFechaHoraAsc(start, end);
+        return turnoRepo.findByFechaHoraBetweenOrderByFechaHoraAsc(
+                start, end);
+    }
+
+    public Turno buscarPorId(Long id) {
+        return turnoRepo.findById(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Turno no encontrado: " + id));
     }
 
     public Turno agendarTurno(Long pacienteId, Turno turno) {
 
-        Paciente paciente = pacienteRepo.findById(pacienteId)
-                .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
+        if (turno == null) {
+            throw new IllegalArgumentException(
+                    "El turno no puede ser nulo");
+        }
 
+        Paciente paciente = pacienteRepo.findById(pacienteId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Paciente no encontrado"));
+
+        turno.setId(null);
         turno.setPaciente(paciente);
 
-        Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth != null
-                && auth.isAuthenticated()
-                && !"anonymousUser".equals(auth.getName())) {
-
-            String usernameOrEmail = auth.getName();
-
-            Usuario usuarioLogueado = usuarioRepo
-                    .findByEmail(usernameOrEmail)
-                    .orElseGet(() ->
-                            usuarioRepo.findByUsername(usernameOrEmail)
-                                    .orElse(null));
-
-            /*
-             * Si en el futuro Turno tiene una relación directa
-             * con Usuario/Profesional, puede asignarse acá.
-             */
-        }
-
         return turnoRepo.save(turno);
     }
 
-    /**
-     * Guarda un turno ya construido.
-     * Este método es utilizado por TurnoController.
-     */
     public Turno guardarTurno(Turno turno) {
+
         if (turno == null) {
-            throw new IllegalArgumentException("El turno no puede ser nulo");
+            throw new IllegalArgumentException(
+                    "El turno no puede ser nulo");
         }
 
         return turnoRepo.save(turno);
     }
 
-    public void actualizarEstado(Long turnoId, String nuevoEstado) {
+    @Transactional
+    public Turno editarTurno(
+            Long turnoId,
+            Long pacienteId,
+            Turno datos) {
 
-        Turno turno = turnoRepo.findById(turnoId)
+        if (datos == null) {
+            throw new IllegalArgumentException(
+                    "Los datos del turno no pueden ser nulos");
+        }
+
+        Turno existente = buscarPorId(turnoId);
+
+        Paciente paciente = pacienteRepo.findById(pacienteId)
                 .orElseThrow(() ->
-                        new RuntimeException("Turno no encontrado"));
+                        new IllegalArgumentException(
+                                "Paciente no encontrado"));
+
+        if (datos.getFechaHora() == null) {
+            throw new IllegalArgumentException(
+                    "La fecha y hora son obligatorias");
+        }
+
+        existente.setPaciente(paciente);
+        existente.setFechaHora(datos.getFechaHora());
+        existente.setMedicoAsignado(
+                datos.getMedicoAsignado());
+        existente.setEspecialidad(
+                datos.getEspecialidad());
+        existente.setMotivo(datos.getMotivo());
+
+        // Conservamos el estado actual del turno.
+        // Se modifica por la ruta /turnos/{id}/estado.
+
+        return turnoRepo.save(existente);
+    }
+
+    @Transactional
+    public void eliminarTurno(Long turnoId) {
+
+        Turno turno = buscarPorId(turnoId);
+
+        turnoRepo.delete(turno);
+    }
+
+    @Transactional
+    public void actualizarEstado(
+            Long turnoId,
+            String nuevoEstado) {
+
+        Turno turno = buscarPorId(turnoId);
 
         turno.setEstado(nuevoEstado);
 
