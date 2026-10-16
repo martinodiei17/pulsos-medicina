@@ -1,4 +1,3 @@
-
 package com.pulsos.medicina.service;
 
 import com.pulsos.medicina.model.Consulta;
@@ -62,11 +61,21 @@ public class PacienteService {
         return pacienteRepo.findAll();
     }
 
+    // CORRECCION:
+    // Inicializamos consultas y adjuntos mientras
+    // la transaccion de Hibernate esta abierta.
+
+    @Transactional(readOnly = true)
     public Paciente buscarPorId(Long id) {
 
-        return pacienteRepo.findById(id)
+        Paciente paciente = pacienteRepo.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("Paciente no encontrado"));
+
+        paciente.getConsultas().size();
+        paciente.getAdjuntos().size();
+
+        return paciente;
     }
 
     public Paciente guardar(Paciente paciente) {
