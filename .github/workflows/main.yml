@@ -20,4 +20,5 @@ jobs:
           cache: maven
 
       - name: Compilar proyecto
+        working-directory: ./sistema-pulsos
         run: mvn -B -DskipTests package
