@@ -529,6 +529,9 @@
             <div class="info-label">Cobertura</div>
             <div class="info-val" th:text="${(paciente.obraSocial != null && !paciente.obraSocial.isEmpty() ? paciente.obraSocial : 'Particular') + (paciente.numeroAfiliado != null ? ' - ' + paciente.numeroAfiliado : '')}">OSDE</div>
 
+            <div class="info-label">Plan Obra Social</div>
+            <div class="info-val" th:text="${paciente.planObraSocial != null && !paciente.planObraSocial.isEmpty() ? paciente.planObraSocial : 'No registrado'}">No registrado</div>
+
             <div class="info-label">Contacto</div>
             <div class="info-val" style="margin-bottom: 0;">
                 <div th:text="${paciente.telefono}">+54 9 11...</div>

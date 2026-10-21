@@ -85,6 +85,7 @@ public class PacienteService {
             existente.setTelefono(paciente.getTelefono());
             existente.setEmail(paciente.getEmail());
             existente.setObraSocial(paciente.getObraSocial());
+            existente.setPlanObraSocial(paciente.getPlanObraSocial());
             existente.setNumeroAfiliado(paciente.getNumeroAfiliado());
             existente.setGrupoSanguineo(paciente.getGrupoSanguineo());
             existente.setAntecedentesMedicos(

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
@@ -145,6 +146,7 @@
 <div class="container">
     <div class="panel">
         <h2 class="panel-title" th:text="${esEdicion} ? 'Modificar Información del Paciente' : 'Alta de Nuevo Paciente'">Gestión de Paciente</h2>
+
         <form th:action="@{/pacientes/guardar}" th:object="${paciente}" method="post">
             <input type="hidden" th:field="*{id}">
 
@@ -177,6 +179,12 @@
                 <div class="form-group">
                     <label>Obra Social / Prepaga</label>
                     <input type="text" th:field="*{obraSocial}" placeholder="Ej. OSDE, Swiss Medical, Particular">
+                </div>
+
+                <!-- NUEVO CAMPO: PLAN OBRA SOCIAL -->
+                <div class="form-group">
+                    <label>Plan Obra Social</label>
+                    <input type="text" th:field="*{planObraSocial}" placeholder="Ej. 210, 310, Plan Familiar">
                 </div>
 
                 <div class="form-group">
