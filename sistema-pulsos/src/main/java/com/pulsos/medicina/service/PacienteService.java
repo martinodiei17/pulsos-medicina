@@ -1,4 +1,3 @@
-
 package com.pulsos.medicina.service;
 
 import com.pulsos.medicina.model.Consulta;
@@ -145,6 +144,11 @@ public class PacienteService {
         consulta.setPaciente(paciente);
 
         consultaRepo.save(consulta);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Consulta> listarConsultasPorPaciente(Long pacienteId) {
+        return consultaRepo.findByPacienteIdOrderByFechaDesc(pacienteId);
     }
 
     public Consulta buscarConsultaPorId(Long consultaId) {

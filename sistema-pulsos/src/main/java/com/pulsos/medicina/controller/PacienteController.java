@@ -59,6 +59,7 @@ public class PacienteController {
     public String verHistoriaClinica(@PathVariable Long id, Model model) {
         Paciente paciente = pacienteService.buscarPorId(id);
         model.addAttribute("paciente", paciente);
+        model.addAttribute("consultas", pacienteService.listarConsultasPorPaciente(id));
         model.addAttribute("nuevaConsulta", new Consulta());
         model.addAttribute("consultaEditando", null);
         return "pacientes/historia-clinica";
@@ -72,6 +73,7 @@ public class PacienteController {
             throw new RuntimeException("La historia clínica no pertenece al paciente indicado");
         }
         model.addAttribute("paciente", paciente);
+        model.addAttribute("consultas", pacienteService.listarConsultasPorPaciente(id));
         model.addAttribute("nuevaConsulta", consulta);
         model.addAttribute("consultaEditando", consulta);
         return "pacientes/historia-clinica";

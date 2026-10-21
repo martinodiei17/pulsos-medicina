@@ -663,7 +663,7 @@
 
         <div class="panel">
             <h3 class="panel-title">Historial Clínico Cronológico</h3>
-            <div th:each="c : ${paciente.consultas}" class="consulta-card">
+            <div th:each="c : ${consultas}" class="consulta-card">
                 <div class="consulta-header">
                     <div>
                         <strong style="color: var(--verde-primario);" th:text="${c.medicoTratante}">Dr. Médico</strong>
@@ -689,7 +689,7 @@
                     </form>
                 </div>
             </div>
-            <div th:if="${#lists.isEmpty(paciente.consultas)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 20px 0;">
+            <div th:if="${#lists.isEmpty(consultas)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 20px 0;">
                 Aún no se han registrado consultas médicas para este paciente.
             </div>
         </div>
