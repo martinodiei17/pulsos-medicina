@@ -61,6 +61,11 @@ public class PacienteService {
         return pacienteRepo.findAll();
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<DocumentoAdjunto> listarAdjuntosPorPaciente(Long pacienteId) {
+        return docRepo.findByPacienteId(pacienteId);
+    }
+
     public Paciente buscarPorId(Long id) {
 
         return pacienteRepo.findById(id)

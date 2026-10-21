@@ -373,7 +373,6 @@
             margin-bottom: 4px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
-            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -608,8 +607,8 @@
                 </form>
             </div>
 
-            <div class="docs-grid" th:if="${not #lists.isEmpty(paciente.adjuntos)}">
-                <div class="doc-card" th:each="doc : ${paciente.adjuntos}">
+            <div class="docs-grid" th:if="${not #lists.isEmpty(adjuntos)}">
+                <div class="doc-card" th:each="doc : ${adjuntos}">
                     <div class="doc-preview-box" 
                          th:onclick="abrirVisor([[${doc.id}]], [[${doc.nombreArchivoOriginal}]], [[${doc.isImage()}]], [[${doc.isPdf()}]])">
                         
@@ -657,7 +656,7 @@
                 </div>
             </div>
 
-            <div th:if="${#lists.isEmpty(paciente.adjuntos)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 25px 0;">
+            <div th:if="${#lists.isEmpty(adjuntos)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 25px 0;">
                 No hay estudios de imágenes ni recetas registradas en esta historia.
             </div>
         </div>
