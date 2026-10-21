@@ -3,17 +3,22 @@ package com.pulsos.medicina.controller;
 import com.pulsos.medicina.model.Consulta;
 import com.pulsos.medicina.model.DocumentoAdjunto;
 import com.pulsos.medicina.model.Paciente;
+import com.pulsos.medicina.model.Usuario;
 import com.pulsos.medicina.service.PacienteService;
 import com.pulsos.medicina.service.PdfExportService;
+import com.pulsos.medicina.service.UsuarioService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/pacientes")
@@ -21,10 +26,14 @@ public class PacienteController {
 
     private final PacienteService pacienteService;
     private final PdfExportService pdfExportService;
+    private final UsuarioService usuarioService;
 
-    public PacienteController(PacienteService pacienteService, PdfExportService pdfExportService) {
+    public PacienteController(PacienteService pacienteService,
+                              PdfExportService pdfExportService,
+                              UsuarioService usuarioService) {
         this.pacienteService = pacienteService;
         this.pdfExportService = pdfExportService;
+        this.usuarioService = usuarioService;
     }
 
     @GetMapping
@@ -55,19 +64,78 @@ public class PacienteController {
         return "redirect:/pacientes/" + paciente.getId();
     }
 
+    private boolean esAdmin(Authentication auth) {
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    private Usuario usuarioAutenticado(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new AccessDeniedException("Debe iniciar sesión");
+        }
+        return usuarioService.buscarPorUsername(auth.getName())
+                .filter(Usuario::isActivo)
+                .orElseThrow(() -> new AccessDeniedException("Usuario no encontrado o inactivo"));
+    }
+
+    private String nombreProfesional(Usuario usuario) {
+        String nombre = usuario.getNombreCompleto();
+        return nombre != null && !nombre.isBlank() ? nombre.trim() : usuario.getUsername();
+    }
+
+    private void cargarProfesionales(Model model, Authentication auth, Consulta consulta) {
+        Usuario conectado = usuarioAutenticado(auth);
+        boolean admin = esAdmin(auth);
+        model.addAttribute("esAdminClinico", admin);
+        model.addAttribute("medicoLogueado", nombreProfesional(conectado));
+        List<Usuario> medicos = usuarioService.listarMedicos();
+        model.addAttribute("medicosDisponibles", medicos);
+        if (admin && consulta != null && consulta.getMedicoTratante() != null) {
+            medicos.stream()
+                    .filter(u -> nombreProfesional(u).equals(consulta.getMedicoTratante()))
+                    .findFirst()
+                    .ifPresent(u -> model.addAttribute("medicoSeleccionado", u.getUsername()));
+        }
+    }
+
+    private void asignarMedico(Consulta consulta, Authentication auth, String medicoSeleccionado) {
+        Usuario conectado = usuarioAutenticado(auth);
+        Usuario profesional;
+        if (esAdmin(auth)) {
+            if (medicoSeleccionado == null || medicoSeleccionado.isBlank()) {
+                throw new IllegalArgumentException("Seleccione un médico tratante");
+            }
+            profesional = usuarioService.listarMedicos().stream()
+                    .filter(u -> u.getUsername().equals(medicoSeleccionado))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("El médico seleccionado no está habilitado"));
+        } else {
+            boolean medico = auth.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_MEDICO".equals(a.getAuthority()));
+            if (!medico) {
+                throw new AccessDeniedException("No tiene permiso para registrar evoluciones");
+            }
+            profesional = conectado;
+        }
+        consulta.setMedicoTratante(nombreProfesional(profesional));
+        consulta.setMatriculaMedico(profesional.getMatricula());
+    }
+
     @GetMapping("/{id}")
-    public String verHistoriaClinica(@PathVariable Long id, Model model) {
+    public String verHistoriaClinica(@PathVariable Long id, Model model, Authentication auth) {
         Paciente paciente = pacienteService.buscarPorId(id);
         model.addAttribute("paciente", paciente);
         model.addAttribute("consultas", pacienteService.listarConsultasPorPaciente(id));
         model.addAttribute("adjuntos", pacienteService.listarAdjuntosPorPaciente(id));
         model.addAttribute("nuevaConsulta", new Consulta());
         model.addAttribute("consultaEditando", null);
+        cargarProfesionales(model, auth, null);
         return "pacientes/historia-clinica";
     }
 
     @GetMapping("/{id}/consultas/{consultaId}/editar")
-    public String editarConsulta(@PathVariable Long id, @PathVariable Long consultaId, Model model) {
+    public String editarConsulta(@PathVariable Long id, @PathVariable Long consultaId,
+                                 Model model, Authentication auth) {
         Paciente paciente = pacienteService.buscarPorId(id);
         Consulta consulta = pacienteService.buscarConsultaPorId(consultaId);
         if (!consulta.getPaciente().getId().equals(id)) {
@@ -78,21 +146,26 @@ public class PacienteController {
         model.addAttribute("adjuntos", pacienteService.listarAdjuntosPorPaciente(id));
         model.addAttribute("nuevaConsulta", consulta);
         model.addAttribute("consultaEditando", consulta);
+        cargarProfesionales(model, auth, consulta);
         return "pacientes/historia-clinica";
     }
 
     @PostMapping("/{id}/consultas")
-    public String agregarConsulta(@PathVariable Long id, @ModelAttribute Consulta nuevaConsulta, Authentication auth) {
-        if (nuevaConsulta.getMedicoTratante() == null || nuevaConsulta.getMedicoTratante().isEmpty()) {
-            nuevaConsulta.setMedicoTratante(auth != null ? auth.getName() : "Médico");
-        }
+    public String agregarConsulta(@PathVariable Long id,
+                                  @ModelAttribute Consulta nuevaConsulta,
+                                  @RequestParam(value = "medicoSeleccionado", required = false) String medicoSeleccionado,
+                                  Authentication auth) {
+        asignarMedico(nuevaConsulta, auth, medicoSeleccionado);
         pacienteService.agregarConsulta(id, nuevaConsulta);
         return "redirect:/pacientes/" + id;
     }
 
     @PostMapping("/{id}/consultas/{consultaId}/editar")
     public String actualizarConsulta(@PathVariable Long id, @PathVariable Long consultaId,
-                                     @ModelAttribute Consulta consulta) {
+                                     @ModelAttribute Consulta consulta,
+                                     @RequestParam(value = "medicoSeleccionado", required = false) String medicoSeleccionado,
+                                     Authentication auth) {
+        asignarMedico(consulta, auth, medicoSeleccionado);
         pacienteService.actualizarConsulta(id, consultaId, consulta);
         return "redirect:/pacientes/" + id;
     }
@@ -136,7 +209,6 @@ public class PacienteController {
         DocumentoAdjunto doc = pacienteService.buscarDocumentoPorId(docId);
         Resource file = pacienteService.cargarArchivoComoRecurso(doc.getNombreArchivoAlmacenado());
         String mediaType = doc.getContentType() != null ? doc.getContentType() : "application/octet-stream";
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(mediaType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getNombreArchivoOriginal() + "\"")
@@ -148,7 +220,6 @@ public class PacienteController {
         Paciente paciente = pacienteService.buscarPorId(id);
         byte[] pdfBytes = pdfExportService.generarHistoriaClinicaPdf(paciente);
         String nombrePdf = "Historia_Clinica_" + paciente.getDni() + ".pdf";
-
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombrePdf + "\"")

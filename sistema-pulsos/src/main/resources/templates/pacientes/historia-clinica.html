@@ -554,7 +554,17 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                     <div>
                         <label class="info-label">Médico Tratante</label>
-                        <input type="text" th:field="*{medicoTratante}" class="custom-text-input" placeholder="Nombre del Médico">
+                        <!-- ADMIN: elige un profesional habilitado -->
+                        <select th:if="${esAdminClinico}" name="medicoSeleccionado" class="custom-select" required>
+                            <option value="">Seleccione un médico...</option>
+                            <option th:each="med : ${medicosDisponibles}"
+                                    th:value="${med.username}"
+                                    th:text="${med.nombreCompleto != null && !med.nombreCompleto.isEmpty() ? med.nombreCompleto : med.username}"
+                                    th:selected="${medicoSeleccionado != null && medicoSeleccionado == med.username}">Médico</option>
+                        </select>
+                        <!-- MEDICO: el nombre se muestra bloqueado; el servidor asigna el profesional -->
+                        <input th:unless="${esAdminClinico}" type="text" class="custom-text-input"
+                               th:value="${medicoLogueado}" readonly aria-label="Médico tratante">
                     </div>
                     <div>
                         <label class="info-label">Motivo de Consulta *</label>
