@@ -250,7 +250,10 @@ public class GoogleCalendarSyncService {
         }
     }
 
-    /** Solo incluye campos de error de la API; no vuelca la respuesta íntegra. */
+    /**
+     * Diagnostico seguro: solo campos estructurados de error, nunca el cuerpo
+     * completo, tokens, cabeceras de autorizacion ni informacion clinica.
+     */
     private String detalleSeguro(String body) {
         if (body == null || body.isBlank()) {
             return "Sin detalle de Google";
@@ -258,21 +261,59 @@ public class GoogleCalendarSyncService {
         try {
             var root = objectMapper.readTree(body);
             var error = root.path("error");
-            String code = error.path("code").asText("");
-            String reason = "";
+            StringBuilder detalle = new StringBuilder();
+            agregarCampoSeguro(detalle, "code", error.path("code").asText(""));
+            agregarCampoSeguro(detalle, "status", error.path("status").asText(""));
+            agregarCampoSeguro(detalle, "message", error.path("message").asText(""));
+
             var errors = error.path("errors");
-            if (errors.isArray() && !errors.isEmpty()) {
-                reason = errors.get(0).path("reason").asText("");
+            if (errors.isArray()) {
+                for (int i = 0; i < Math.min(errors.size(), 3); i++) {
+                    var item = errors.get(i);
+                    agregarCampoSeguro(detalle, "errors[" + i + "].reason",
+                            item.path("reason").asText(""));
+                    agregarCampoSeguro(detalle, "errors[" + i + "].domain",
+                            item.path("domain").asText(""));
+                    agregarCampoSeguro(detalle, "errors[" + i + "].locationType",
+                            item.path("locationType").asText(""));
+                }
             }
-            String message = error.path("message").asText("");
-            if (!code.isBlank() || !reason.isBlank() || !message.isBlank()) {
-                return limitarTexto("code=" + code + ", reason=" + reason
-                        + ", message=" + message);
+
+            var details = error.path("details");
+            if (details.isArray()) {
+                for (int i = 0; i < Math.min(details.size(), 3); i++) {
+                    var item = details.get(i);
+                    agregarCampoSeguro(detalle, "details[" + i + "].type",
+                            item.path("@type").asText(""));
+                    agregarCampoSeguro(detalle, "details[" + i + "].reason",
+                            item.path("reason").asText(""));
+                }
+            }
+            if (detalle.length() > 0) {
+                return limitarTexto(detalle.toString());
             }
         } catch (IOException ignored) {
-            // No imprimir el cuerpo sin procesar si la API responde algo inesperado.
+            // No imprimir la respuesta original si no es JSON valido.
         }
-        return "Google devolvió una respuesta de error sin detalle estructurado";
+        return "Google devolvio un error sin campos estructurados reconocidos";
+    }
+
+    private void agregarCampoSeguro(StringBuilder salida, String nombre, String valor) {
+        if (valor == null || valor.isBlank()) {
+            return;
+        }
+        // Solo valores tecnicos de campos acotados. El mensaje libre no se
+        // registra para evitar revelar datos sensibles en los logs.
+        if ("message".equals(nombre)) {
+            valor = "Bad Request".equalsIgnoreCase(valor.trim())
+                    ? "Bad Request" : "mensaje_omitido_por_privacidad";
+        } else {
+            valor = valor.replaceAll("[^a-zA-Z0-9._:/-]", "_");
+        }
+        if (salida.length() > 0) {
+            salida.append(", ");
+        }
+        salida.append(nombre).append("=").append(valor);
     }
 
     private String limitarTexto(String value) {
