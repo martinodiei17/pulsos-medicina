@@ -9,6 +9,8 @@ import com.pulsos.medicina.model.Usuario;
 import com.pulsos.medicina.repository.GoogleCalendarCredentialRepository;
 import com.pulsos.medicina.repository.TurnoRepository;
 import com.pulsos.medicina.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +25,11 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class GoogleCalendarSyncService {
 
+    private static final Logger log = LoggerFactory.getLogger(GoogleCalendarSyncService.class);
     private static final String API_URL =
             "https://www.googleapis.com/calendar/v3/calendars/";
     private static final String EVENT_TITLE = "Turno médico - Pulsos Medicina";
@@ -102,13 +104,11 @@ public class GoogleCalendarSyncService {
 
         Turno turno = turnoRepository.findById(job.getTurnoId()).orElse(null);
         if (turno == null || esCancelado(turno)) {
-            // La operación quedó obsoleta: no recrear un turno eliminado/cancelado.
             return;
         }
 
         Usuario medicoActual = resolverMedico(turno);
         if (medicoActual == null || !job.getUsuarioId().equals(medicoActual.getId())) {
-            // El turno fue reasignado: este trabajo pertenece al médico anterior.
             return;
         }
         sincronizarTurnoParaMedico(turno, job.getUsuarioId(), job);
@@ -123,7 +123,6 @@ public class GoogleCalendarSyncService {
         String calendarId = normalizarCalendarId(credential.getCalendarId());
         String eventId = generarEventId(usuarioId, turno.getId());
 
-        // Los IDs anteriores solo se reutilizan si pertenecen al mismo calendario.
         if (turno.getGoogleCalendarEventId() != null
                 && !turno.getGoogleCalendarEventId().isBlank()
                 && calendarId.equals(normalizarCalendarId(turno.getGoogleCalendarId()))) {
@@ -131,30 +130,59 @@ public class GoogleCalendarSyncService {
         }
 
         String accessToken = oauthService.obtenerAccessToken(usuarioId);
-        String body;
-        try {
-            ObjectNode evento = construirEvento(turno);
-            evento.put("id", eventId);
-            body = objectMapper.writeValueAsString(evento);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo preparar el evento", e);
-        }
+        diagnosticarPermisosGoogle(accessToken, usuarioId);
+        ObjectNode evento = construirEvento(turno);
+        evento.put("id", eventId);
+        String body = evento.toString();
 
-        // POST con ID estable: si ya existe, PUT. No hay recursión entre ambos.
+        // No registrar el JSON del evento ni el token en los logs.
+        log.info("Google Calendar: inicio de sincronización turnoId={}, usuarioId={}, "
+                        + "operacion={}, zonaHoraria={}, tieneIdPersistido={}",
+                turno.getId(), usuarioId,
+                job == null ? "DIRECTA" : job.getOperacion(),
+                zoneId.getId(),
+                turno.getGoogleCalendarEventId() != null
+                        && !turno.getGoogleCalendarEventId().isBlank());
+
         HttpResponse<String> response = enviar("POST",
                 urlEventos(calendarId), accessToken, body);
+        logRespuesta("POST_CON_ID", turno.getId(), usuarioId, response);
+
         if (response.statusCode() == 409) {
             response = enviar("PUT", urlEvento(calendarId, eventId),
                     accessToken, body);
+            logRespuesta("PUT_POR_CONFLICTO", turno.getId(), usuarioId, response);
         }
+
+        boolean tieneIdGuardado = turno.getGoogleCalendarEventId() != null
+                && !turno.getGoogleCalendarEventId().isBlank();
+        if (response.statusCode() == 400 && !tieneIdGuardado) {
+            log.warn("Google Calendar: primer intento HTTP 400; "
+                            + "se probará POST sin ID personalizado. turnoId={}, usuarioId={}",
+                    turno.getId(), usuarioId);
+            ObjectNode eventoSinId = construirEvento(turno);
+            response = enviar("POST", urlEventos(calendarId),
+                    accessToken, eventoSinId.toString());
+            logRespuesta("POST_SIN_ID", turno.getId(), usuarioId, response);
+        }
+
         if (!esExito(response.statusCode())) {
             throw new IllegalStateException(
                     "Google Calendar rechazó el guardado. HTTP "
-                            + response.statusCode());
+                            + response.statusCode() + " - " + detalleSeguro(response.body()));
         }
 
-        // No volver a asignar IDs de un médico anterior si el turno cambió
-        // mientras Google procesaba la petición.
+        try {
+            String idRespuesta = objectMapper.readTree(response.body())
+                    .path("id").asText("");
+            if (!idRespuesta.isBlank()) {
+                eventId = idRespuesta;
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Google creó el evento pero no se pudo leer su identificador", e);
+        }
+
         Turno actual = turnoRepository.findById(turno.getId()).orElse(null);
         if (actual != null && !esCancelado(actual)) {
             Usuario medicoActual = resolverMedico(actual);
@@ -164,6 +192,91 @@ public class GoogleCalendarSyncService {
                 turnoRepository.save(actual);
             }
         }
+    }
+
+    /**
+     * Diagnóstico temporal: comprueba los scopes concedidos al access token.
+     * El token se transmite únicamente a Google mediante HTTPS y nunca se registra.
+     * No interrumpe la sincronización si el servicio de diagnóstico falla.
+     * Retirar este diagnóstico después de resolver el problema.
+     */
+    private void diagnosticarPermisosGoogle(String accessToken, Long usuarioId) {
+        try {
+            String url = "https://oauth2.googleapis.com/tokeninfo?access_token="
+                    + encode(accessToken);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                log.warn("Google Calendar: diagnostico_scopes usuarioId={}, HTTP={}",
+                        usuarioId, response.statusCode());
+                return;
+            }
+            var json = objectMapper.readTree(response.body());
+            String scopes = json.path("scope").asText("");
+            boolean permiteEventos = java.util.Arrays.stream(scopes.split("\\s+"))
+                    .anyMatch("https://www.googleapis.com/auth/calendar.events"::equals);
+            log.info("Google Calendar: diagnostico_scopes usuarioId={}, calendarEventsConcedido={}, "
+                            + "scopes={}", usuarioId, permiteEventos,
+                    scopes.isBlank() ? "no_informados" : limitarTexto(scopes));
+        } catch (IOException e) {
+            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=IO",
+                    usuarioId);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=interrumpido",
+                    usuarioId);
+        } catch (RuntimeException e) {
+            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=error",
+                    usuarioId);
+        }
+    }
+
+    /** Registra solo el código y el error de Google, nunca datos clínicos ni tokens. */
+    private void logRespuesta(String etapa, Long turnoId, Long usuarioId,
+                             HttpResponse<String> response) {
+        if (esExito(response.statusCode())) {
+            log.info("Google Calendar: etapa={}, turnoId={}, usuarioId={}, HTTP={}",
+                    etapa, turnoId, usuarioId, response.statusCode());
+        } else {
+            log.warn("Google Calendar: etapa={}, turnoId={}, usuarioId={}, HTTP={}, error={}",
+                    etapa, turnoId, usuarioId, response.statusCode(),
+                    detalleSeguro(response.body()));
+        }
+    }
+
+    /** Solo incluye campos de error de la API; no vuelca la respuesta íntegra. */
+    private String detalleSeguro(String body) {
+        if (body == null || body.isBlank()) {
+            return "Sin detalle de Google";
+        }
+        try {
+            var root = objectMapper.readTree(body);
+            var error = root.path("error");
+            String code = error.path("code").asText("");
+            String reason = "";
+            var errors = error.path("errors");
+            if (errors.isArray() && !errors.isEmpty()) {
+                reason = errors.get(0).path("reason").asText("");
+            }
+            String message = error.path("message").asText("");
+            if (!code.isBlank() || !reason.isBlank() || !message.isBlank()) {
+                return limitarTexto("code=" + code + ", reason=" + reason
+                        + ", message=" + message);
+            }
+        } catch (IOException ignored) {
+            // No imprimir el cuerpo sin procesar si la API responde algo inesperado.
+        }
+        return "Google devolvió una respuesta de error sin detalle estructurado";
+    }
+
+    private String limitarTexto(String value) {
+        String limpio = value.replaceAll("[\\r\\n]+", " ");
+        return limpio.length() > 500 ? limpio.substring(0, 500) : limpio;
     }
 
     /** Elimina el evento de un turno que todavía existe localmente. */
@@ -270,7 +383,6 @@ public class GoogleCalendarSyncService {
     }
 
     private String generarEventId(Long usuarioId, Long turnoId) {
-        // Google admite caracteres base32hex: 0-9 y a-v.
         return "pulsos" + Long.toHexString(usuarioId)
                 + "a" + Long.toHexString(turnoId) + "b2026";
     }
