@@ -1,3 +1,4 @@
+
 package com.pulsos.medicina.model;
 
 import jakarta.persistence.*;
@@ -9,6 +10,7 @@ import java.util.List;
 @Entity
 @Table(name = "pacientes")
 public class Paciente {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,6 +25,10 @@ public class Paciente {
     private String telefono;
     private String email;
     private String obraSocial;
+
+    // NUEVO CAMPO: PLAN OBRA SOCIAL
+    private String planObraSocial;
+
     private String numeroAfiliado;
     private String grupoSanguineo;
 
@@ -57,30 +63,73 @@ public class Paciente {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public String getNombreCompleto() { return nombreCompleto; }
-    public void setNombreCompleto(String nombreCompleto) { this.nombreCompleto = nombreCompleto; }
+    public void setNombreCompleto(String nombreCompleto) {
+        this.nombreCompleto = nombreCompleto;
+    }
+
     public String getDni() { return dni; }
     public void setDni(String dni) { this.dni = dni; }
+
     public LocalDate getFechaNacimiento() { return fechaNacimiento; }
-    public void setFechaNacimiento(LocalDate fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
+    public void setFechaNacimiento(LocalDate fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+    }
+
     public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
     public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getObraSocial() { return obraSocial; }
-    public void setObraSocial(String obraSocial) { this.obraSocial = obraSocial; }
+    public void setObraSocial(String obraSocial) {
+        this.obraSocial = obraSocial;
+    }
+
+    // GETTER Y SETTER DEL NUEVO CAMPO
+    public String getPlanObraSocial() { return planObraSocial; }
+    public void setPlanObraSocial(String planObraSocial) {
+        this.planObraSocial = planObraSocial;
+    }
+
     public String getNumeroAfiliado() { return numeroAfiliado; }
-    public void setNumeroAfiliado(String numeroAfiliado) { this.numeroAfiliado = numeroAfiliado; }
+    public void setNumeroAfiliado(String numeroAfiliado) {
+        this.numeroAfiliado = numeroAfiliado;
+    }
+
     public String getGrupoSanguineo() { return grupoSanguineo; }
-    public void setGrupoSanguineo(String grupoSanguineo) { this.grupoSanguineo = grupoSanguineo; }
+    public void setGrupoSanguineo(String grupoSanguineo) {
+        this.grupoSanguineo = grupoSanguineo;
+    }
+
     public String getAntecedentesMedicos() { return antecedentesMedicos; }
-    public void setAntecedentesMedicos(String antecedentesMedicos) { this.antecedentesMedicos = antecedentesMedicos; }
+    public void setAntecedentesMedicos(String antecedentesMedicos) {
+        this.antecedentesMedicos = antecedentesMedicos;
+    }
+
     public String getAlergias() { return alergias; }
-    public void setAlergias(String alergias) { this.alergias = alergias; }
+    public void setAlergias(String alergias) {
+        this.alergias = alergias;
+    }
+
     public List<Consulta> getConsultas() { return consultas; }
-    public void setConsultas(List<Consulta> consultas) { this.consultas = consultas; }
+    public void setConsultas(List<Consulta> consultas) {
+        this.consultas = consultas;
+    }
+
     public List<DocumentoAdjunto> getAdjuntos() { return adjuntos; }
-    public void setAdjuntos(List<DocumentoAdjunto> adjuntos) { this.adjuntos = adjuntos; }
+    public void setAdjuntos(List<DocumentoAdjunto> adjuntos) {
+        this.adjuntos = adjuntos;
+    }
+
     public List<Turno> getTurnos() { return turnos; }
-    public void setTurnos(List<Turno> turnos) { this.turnos = turnos; }
+    public void setTurnos(List<Turno> turnos) {
+        this.turnos = turnos;
+    }
 }

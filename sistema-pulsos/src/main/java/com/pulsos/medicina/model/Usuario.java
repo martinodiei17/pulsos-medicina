@@ -30,6 +30,17 @@ public class Usuario {
     @Enumerated(EnumType.STRING)
     private Set<Rol> roles = new HashSet<>();
 
+    private boolean googleCalendarConectado = false;
+    private String googleCalendarEmail;
+    private java.time.LocalDateTime googleCalendarUltimaSync;
+
+    public boolean isGoogleCalendarConectado() { return googleCalendarConectado; }
+    public void setGoogleCalendarConectado(boolean v) { this.googleCalendarConectado = v; }
+    public String getGoogleCalendarEmail() { return googleCalendarEmail; }
+    public void setGoogleCalendarEmail(String v) { this.googleCalendarEmail = v; }
+    public java.time.LocalDateTime getGoogleCalendarUltimaSync() { return googleCalendarUltimaSync; }
+    public void setGoogleCalendarUltimaSync(java.time.LocalDateTime v) { this.googleCalendarUltimaSync = v; }
+
     public Usuario() {}
 
     public Long getId() { return id; }

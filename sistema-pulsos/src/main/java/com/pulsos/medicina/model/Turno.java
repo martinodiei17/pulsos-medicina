@@ -20,6 +20,20 @@ public class Turno {
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "medico_usuario_id")
+    private Usuario medico;
+
+    private String googleCalendarEventId;
+    private String googleCalendarId;
+
+    public Usuario getMedico() { return medico; }
+    public void setMedico(Usuario medico) { this.medico = medico; }
+    public String getGoogleCalendarEventId() { return googleCalendarEventId; }
+    public void setGoogleCalendarEventId(String id) { this.googleCalendarEventId = id; }
+    public String getGoogleCalendarId() { return googleCalendarId; }
+    public void setGoogleCalendarId(String id) { this.googleCalendarId = id; }
+
     public Turno() {}
 
     public Long getId() { return id; }

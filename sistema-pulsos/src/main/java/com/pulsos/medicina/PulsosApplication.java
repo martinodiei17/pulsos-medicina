@@ -5,6 +5,7 @@ import com.pulsos.medicina.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @SpringBootApplication
+@EnableScheduling
 public class PulsosApplication {
 
 	public static void main(String[] args) {

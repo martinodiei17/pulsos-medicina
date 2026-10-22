@@ -244,6 +244,9 @@
                 Conecta tu agenda directamente con <b>Google Calendar, iPhone o Outlook</b> para recibir recordatorios en tu celular.
             </p>
 
+            <div th:if="${googleCalendarExito}" th:text="${googleCalendarExito}" style="color:#315a40;margin-bottom:10px;"></div>
+            <div th:if="${googleCalendarError}" th:text="${googleCalendarError}" style="color:#a33434;margin-bottom:10px;"></div>
+            <a th:href="@{/google/calendar/conectar}" class="btn" style="display:block;text-align:center;width:100%;margin-bottom:10px;">Conectar Google Calendar</a>
             <a th:if="${usuarioActual != null}"
                th:href="@{/api/calendario/medico/{id}/turnos.ics(id=${usuarioActual.username})}" 
                class="btn btn-outline" style="width: 100%; font-size: 0.75rem; text-align: center; margin-bottom: 8px;">
@@ -273,13 +276,7 @@
                     </div>
 
                     <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-                        <a th:href="'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Cita+Pulsos:+' + ${t.paciente.nombreCompleto} + '&details=Motivo:+' + ${t.motivo} + '+-+Tel:+' + ${t.paciente.telefono} + '&location=Pulsos+Medicina+%26+Bienestar&dates=' + ${#temporals.format(t.fechaHora, 'yyyyMMdd''T''HHmmss')} + '/' + ${#temporals.format(t.fechaHora.plusMinutes(45), 'yyyyMMdd''T''HHmmss')}"
-                           target="_blank" 
-                           class="btn btn-outline" 
-                           style="padding: 4px 8px; font-size: 0.72rem; background: #FFF;" 
-                           title="Agregar este turno específico a Google Calendar">
-                           🗓️ Google Cal
-                        </a>
+
 
                         <form th:action="@{/turnos/{id}/estado(id=${t.id})}" method="post" style="display:inline;">
                             <select name="estado" onchange="this.form.submit()" style="padding: 4px 8px; font-size: 0.72rem; width: auto; margin-bottom: 0;">

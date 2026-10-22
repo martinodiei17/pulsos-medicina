@@ -61,21 +61,16 @@ public class PacienteService {
         return pacienteRepo.findAll();
     }
 
-    // CORRECCION:
-    // Inicializamos consultas y adjuntos mientras
-    // la transaccion de Hibernate esta abierta.
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<DocumentoAdjunto> listarAdjuntosPorPaciente(Long pacienteId) {
+        return docRepo.findByPacienteId(pacienteId);
+    }
 
-    @Transactional(readOnly = true)
     public Paciente buscarPorId(Long id) {
 
-        Paciente paciente = pacienteRepo.findById(id)
+        return pacienteRepo.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("Paciente no encontrado"));
-
-        paciente.getConsultas().size();
-        paciente.getAdjuntos().size();
-
-        return paciente;
     }
 
     public Paciente guardar(Paciente paciente) {
@@ -90,6 +85,7 @@ public class PacienteService {
             existente.setTelefono(paciente.getTelefono());
             existente.setEmail(paciente.getEmail());
             existente.setObraSocial(paciente.getObraSocial());
+            existente.setPlanObraSocial(paciente.getPlanObraSocial());
             existente.setNumeroAfiliado(paciente.getNumeroAfiliado());
             existente.setGrupoSanguineo(paciente.getGrupoSanguineo());
             existente.setAntecedentesMedicos(
@@ -154,6 +150,11 @@ public class PacienteService {
         consulta.setPaciente(paciente);
 
         consultaRepo.save(consulta);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Consulta> listarConsultasPorPaciente(Long pacienteId) {
+        return consultaRepo.findByPacienteIdOrderByFechaDesc(pacienteId);
     }
 
     public Consulta buscarConsultaPorId(Long consultaId) {
