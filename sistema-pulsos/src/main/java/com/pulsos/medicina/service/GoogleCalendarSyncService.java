@@ -132,6 +132,7 @@ public class GoogleCalendarSyncService {
 
         String accessToken = oauthService.obtenerAccessToken(usuarioId);
         diagnosticarPermisosGoogle(accessToken, usuarioId);
+        diagnosticarAccesoCalendario(accessToken, usuarioId, calendarId);
         ObjectNode evento = construirEvento(turno);
         evento.put("id", eventId);
         String body = evento.toString();
@@ -234,6 +235,64 @@ public class GoogleCalendarSyncService {
         } catch (RuntimeException e) {
             log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=error",
                     usuarioId);
+        }
+    }
+
+    /**
+     * Diagnostico temporal de acceso usando exactamente el token del sincronizador.
+     * Un 403 en calendarList puede deberse al scope calendar.events y NO prueba
+     * ausencia de permiso de escritura. No cambia la sincronizacion.
+     */
+    private void diagnosticarAccesoCalendario(String accessToken, Long usuarioId,
+                                             String calendarId) {
+        consultarAccesoGoogle("CALENDAR_GET", API_URL + encode(calendarId),
+                accessToken, usuarioId, false);
+        consultarAccesoGoogle("CALENDAR_LIST_GET",
+                "https://www.googleapis.com/calendar/v3/users/me/calendarList/"
+                        + encode(calendarId), accessToken, usuarioId, true);
+        // events.list admite el scope calendar.events ya concedido. Es la prueba
+        // de lectura mas util sin solicitar nuevos permisos OAuth.
+        consultarAccesoGoogle("EVENTS_LIST_GET", urlEventos(calendarId)
+                        + "?maxResults=1", accessToken, usuarioId, false);
+    }
+
+    private void consultarAccesoGoogle(String etapa, String url,
+                                     String accessToken, Long usuarioId,
+                                     boolean incluirRol) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET().build();
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                if (incluirRol) {
+                    String rol = objectMapper.readTree(response.body())
+                            .path("accessRole").asText("no_informado");
+                    if (!java.util.List.of("owner", "writer", "reader", "freeBusyReader")
+                            .contains(rol)) {
+                        rol = "desconocido";
+                    }
+                    log.info("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, HTTP=200, accessRole={}",
+                            etapa, usuarioId, rol);
+                } else {
+                    log.info("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, HTTP=200",
+                            etapa, usuarioId);
+                }
+            } else {
+                log.warn("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, HTTP={}, error={}",
+                        etapa, usuarioId, response.statusCode(),
+                        detalleSeguro(response.body()));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, interrumpido",
+                    etapa, usuarioId);
+        } catch (IOException | RuntimeException e) {
+            log.warn("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, no_disponible",
+                    etapa, usuarioId);
         }
     }
 
