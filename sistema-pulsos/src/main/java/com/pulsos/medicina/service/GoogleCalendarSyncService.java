@@ -1,6 +1,7 @@
 package com.pulsos.medicina.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pulsos.medicina.model.GoogleCalendarCredential;
 import com.pulsos.medicina.model.GoogleCalendarSyncJob;
@@ -21,6 +22,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.Set;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -146,6 +151,7 @@ public class GoogleCalendarSyncService {
                 turno.getGoogleCalendarEventId() != null
                         && !turno.getGoogleCalendarEventId().isBlank());
 
+        diagnosticarSolicitud("POST_CON_ID", turno.getId(), usuarioId, urlEventos(calendarId), body);
         HttpResponse<String> response = enviar("POST",
                 urlEventos(calendarId), accessToken, body);
         logRespuesta("POST_CON_ID", turno.getId(), usuarioId, response);
@@ -163,6 +169,8 @@ public class GoogleCalendarSyncService {
                             + "se probará POST sin ID personalizado. turnoId={}, usuarioId={}",
                     turno.getId(), usuarioId);
             ObjectNode eventoSinId = construirEvento(turno);
+            diagnosticarSolicitud("POST_SIN_ID", turno.getId(), usuarioId,
+                    urlEventos(calendarId), eventoSinId.toString());
             response = enviar("POST", urlEventos(calendarId),
                     accessToken, eventoSinId.toString());
             logRespuesta("POST_SIN_ID", turno.getId(), usuarioId, response);
@@ -433,6 +441,67 @@ public class GoogleCalendarSyncService {
                 sincronizarTurno(turno.getId());
             }
         }
+    }
+
+    /**
+     * Diagnóstico del JSON REAL que se envía. Solo imprime el cuerpo si tiene
+     * exclusivamente los campos públicos y constantes que genera esta clase.
+     * Si hay un campo inesperado, registra únicamente tamaño y huella SHA-256.
+     * Nunca registra Authorization ni tokens.
+     */
+    private void diagnosticarSolicitud(String etapa, Long turnoId, Long usuarioId,
+                                     String url, String body) {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        String huella;
+        try {
+            huella = HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (NoSuchAlgorithmException e) {
+            huella = "no_disponible";
+        }
+        String cuerpoSeguro = "OMITIDO_POR_PRIVACIDAD";
+        try {
+            JsonNode root = objectMapper.readTree(body);
+            boolean camposEsperados = root.isObject()
+                    && soloCamposEsperados(root)
+                    && EVENT_TITLE.equals(root.path("summary").asText())
+                    && EVENT_DESCRIPTION.equals(root.path("description").asText())
+                    && camposFechaSeguros(root.path("start"))
+                    && camposFechaSeguros(root.path("end"))
+                    && (!root.has("id") || root.path("id").asText().matches("pulsos[0-9a-f]+a[0-9a-f]+b2026"));
+            if (camposEsperados) {
+                cuerpoSeguro = body;
+            }
+        } catch (Exception ignored) {
+            // Nunca imprimir un JSON no validado.
+        }
+        log.info("Google Calendar: diagnostico_solicitud etapa={}, turnoId={}, usuarioId={}, "
+                        + "url={}, contentType=application/json; charset=UTF-8, bytesUTF8={}, sha256={}, json={}",
+                etapa, turnoId, usuarioId, url, bytes.length, huella, cuerpoSeguro);
+    }
+
+    private boolean soloCamposEsperados(JsonNode root) {
+        var fields = root.fieldNames();
+        while (fields.hasNext()) {
+            if (!Set.of("id", "summary", "description", "start", "end").contains(fields.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean camposFechaSeguros(JsonNode fecha) {
+        if (!fecha.isObject() || !fecha.hasNonNull("dateTime") || !fecha.hasNonNull("timeZone")) {
+            return false;
+        }
+        var fields = fecha.fieldNames();
+        while (fields.hasNext()) {
+            if (!Set.of("dateTime", "timeZone").contains(fields.next())) {
+                return false;
+            }
+        }
+        return fecha.path("dateTime").asText().matches("[0-9T:+.\\-Z]+")
+                && "America/Argentina/Buenos_Aires".equals(fecha.path("timeZone").asText());
     }
 
     private ObjectNode construirEvento(Turno turno) {
