@@ -373,6 +373,7 @@
             margin-bottom: 4px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -528,6 +529,9 @@
             <div class="info-label">Cobertura</div>
             <div class="info-val" th:text="${(paciente.obraSocial != null && !paciente.obraSocial.isEmpty() ? paciente.obraSocial : 'Particular') + (paciente.numeroAfiliado != null ? ' - ' + paciente.numeroAfiliado : '')}">OSDE</div>
 
+            <div class="info-label">Plan Obra Social</div>
+            <div class="info-val" th:text="${paciente.planObraSocial != null && !paciente.planObraSocial.isEmpty() ? paciente.planObraSocial : 'No registrado'}">No registrado</div>
+
             <div class="info-label">Contacto</div>
             <div class="info-val" style="margin-bottom: 0;">
                 <div th:text="${paciente.telefono}">+54 9 11...</div>
@@ -548,12 +552,22 @@
 
     <main>
         <div class="panel" sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')">
-            <h3 class="panel-title">Registrar Nueva Evolución Médica</h3>
-            <form th:action="@{/pacientes/{id}/consultas(id=${paciente.id})}" th:object="${nuevaConsulta}" method="post">
+            <h3 class="panel-title" th:text="${consultaEditando != null} ? 'Editar Evolución Médica' : 'Registrar Nueva Evolución Médica'">Registrar Nueva Evolución Médica</h3>
+            <form th:action="${consultaEditando != null} ? @{/pacientes/{id}/consultas/{consultaId}/editar(id=${paciente.id},consultaId=${consultaEditando.id})} : @{/pacientes/{id}/consultas(id=${paciente.id})}" th:object="${nuevaConsulta}" method="post">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                     <div>
                         <label class="info-label">Médico Tratante</label>
-                        <input type="text" th:field="*{medicoTratante}" class="custom-text-input" placeholder="Nombre del Médico">
+                        <!-- ADMIN: elige un profesional habilitado -->
+                        <select th:if="${esAdminClinico}" name="medicoSeleccionado" class="custom-select" required>
+                            <option value="">Seleccione un médico...</option>
+                            <option th:each="med : ${medicosDisponibles}"
+                                    th:value="${med.username}"
+                                    th:text="${med.nombreCompleto != null && !med.nombreCompleto.isEmpty() ? med.nombreCompleto : med.username}"
+                                    th:selected="${medicoSeleccionado != null && medicoSeleccionado == med.username}">Médico</option>
+                        </select>
+                        <!-- MEDICO: el nombre se muestra bloqueado; el servidor asigna el profesional -->
+                        <input th:unless="${esAdminClinico}" type="text" class="custom-text-input"
+                               th:value="${medicoLogueado}" readonly aria-label="Médico tratante">
                     </div>
                     <div>
                         <label class="info-label">Motivo de Consulta *</label>
@@ -567,8 +581,9 @@
                 <label class="info-label">Plan Terapéutico / Indicaciones / Receta</label>
                 <textarea th:field="*{tratamiento}" rows="2" placeholder="Prescripciones, dosis o estudios solicitados..."></textarea>
 
-                <div style="text-align: right;">
-                    <button type="submit" class="btn">Guardar Evolución</button>
+                <div style="text-align: right; display:flex; justify-content:flex-end; gap:8px;">
+                    <a th:if="${consultaEditando != null}" th:href="@{/pacientes/{id}(id=${paciente.id})}" class="btn btn-outline">Cancelar edición</a>
+                    <button type="submit" class="btn" th:text="${consultaEditando != null} ? 'Guardar Cambios' : 'Guardar Evolución'">Guardar Evolución</button>
                 </div>
             </form>
         </div>
@@ -606,8 +621,8 @@
                 </form>
             </div>
 
-            <div class="docs-grid" th:if="${not #lists.isEmpty(paciente.adjuntos)}">
-                <div class="doc-card" th:each="doc : ${paciente.adjuntos}">
+            <div class="docs-grid" th:if="${not #lists.isEmpty(adjuntos)}">
+                <div class="doc-card" th:each="doc : ${adjuntos}">
                     <div class="doc-preview-box" 
                          th:onclick="abrirVisor([[${doc.id}]], [[${doc.nombreArchivoOriginal}]], [[${doc.isImage()}]], [[${doc.isPdf()}]])">
                         
@@ -655,14 +670,14 @@
                 </div>
             </div>
 
-            <div th:if="${#lists.isEmpty(paciente.adjuntos)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 25px 0;">
+            <div th:if="${#lists.isEmpty(adjuntos)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 25px 0;">
                 No hay estudios de imágenes ni recetas registradas en esta historia.
             </div>
         </div>
 
         <div class="panel">
             <h3 class="panel-title">Historial Clínico Cronológico</h3>
-            <div th:each="c : ${paciente.consultas}" class="consulta-card">
+            <div th:each="c : ${consultas}" class="consulta-card">
                 <div class="consulta-header">
                     <div>
                         <strong style="color: var(--verde-primario);" th:text="${c.medicoTratante}">Dr. Médico</strong>
@@ -681,8 +696,14 @@
                     <span class="info-label">Plan Terapéutico / Indicaciones:</span>
                     <p style="font-size: 0.85rem; margin-top: 2px;" th:text="${c.tratamiento}">Detalle</p>
                 </div>
+                <div sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')" style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--arena-linea);">
+                    <a th:href="@{/pacientes/{id}/consultas/{consultaId}/editar(id=${paciente.id},consultaId=${c.id})}" class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem;">✏️ Editar</a>
+                    <form th:action="@{/pacientes/{id}/consultas/{consultaId}/eliminar(id=${paciente.id},consultaId=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que desea eliminar esta evolución de la historia clínica?');">
+                        <button type="submit" class="btn" style="padding:5px 10px; font-size:0.72rem; background:#A94442;">🗑️ Eliminar</button>
+                    </form>
+                </div>
             </div>
-            <div th:if="${#lists.isEmpty(paciente.consultas)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 20px 0;">
+            <div th:if="${#lists.isEmpty(consultas)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 20px 0;">
                 Aún no se han registrado consultas médicas para este paciente.
             </div>
         </div>

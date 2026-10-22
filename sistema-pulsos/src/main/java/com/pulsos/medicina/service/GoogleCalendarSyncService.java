@@ -1,7 +1,6 @@
 package com.pulsos.medicina.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pulsos.medicina.model.GoogleCalendarCredential;
 import com.pulsos.medicina.model.GoogleCalendarSyncJob;
@@ -22,10 +21,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
-import java.util.Set;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -136,8 +131,6 @@ public class GoogleCalendarSyncService {
         }
 
         String accessToken = oauthService.obtenerAccessToken(usuarioId);
-        diagnosticarPermisosGoogle(accessToken, usuarioId);
-        diagnosticarAccesoCalendario(accessToken, usuarioId, calendarId);
         ObjectNode evento = construirEvento(turno);
         evento.put("id", eventId);
         String body = evento.toString();
@@ -151,7 +144,7 @@ public class GoogleCalendarSyncService {
                 turno.getGoogleCalendarEventId() != null
                         && !turno.getGoogleCalendarEventId().isBlank());
 
-        diagnosticarSolicitud("POST_CON_ID", turno.getId(), usuarioId, urlEventos(calendarId), body);
+        registrarSolicitud("POST_CON_ID", turno.getId(), usuarioId, calendarId, evento);
         HttpResponse<String> response = enviar("POST",
                 urlEventos(calendarId), accessToken, body);
         logRespuesta("POST_CON_ID", turno.getId(), usuarioId, response);
@@ -169,8 +162,7 @@ public class GoogleCalendarSyncService {
                             + "se probará POST sin ID personalizado. turnoId={}, usuarioId={}",
                     turno.getId(), usuarioId);
             ObjectNode eventoSinId = construirEvento(turno);
-            diagnosticarSolicitud("POST_SIN_ID", turno.getId(), usuarioId,
-                    urlEventos(calendarId), eventoSinId.toString());
+            registrarSolicitud("POST_SIN_ID", turno.getId(), usuarioId, calendarId, eventoSinId);
             response = enviar("POST", urlEventos(calendarId),
                     accessToken, eventoSinId.toString());
             logRespuesta("POST_SIN_ID", turno.getId(), usuarioId, response);
@@ -201,106 +193,6 @@ public class GoogleCalendarSyncService {
                 actual.setGoogleCalendarId(calendarId);
                 turnoRepository.save(actual);
             }
-        }
-    }
-
-    /**
-     * Diagnóstico temporal: comprueba los scopes concedidos al access token.
-     * El token se transmite únicamente a Google mediante HTTPS y nunca se registra.
-     * No interrumpe la sincronización si el servicio de diagnóstico falla.
-     * Retirar este diagnóstico después de resolver el problema.
-     */
-    private void diagnosticarPermisosGoogle(String accessToken, Long usuarioId) {
-        try {
-            String url = "https://oauth2.googleapis.com/tokeninfo?access_token="
-                    + encode(accessToken);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(15))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                log.warn("Google Calendar: diagnostico_scopes usuarioId={}, HTTP={}",
-                        usuarioId, response.statusCode());
-                return;
-            }
-            var json = objectMapper.readTree(response.body());
-            String scopes = json.path("scope").asText("");
-            boolean permiteEventos = java.util.Arrays.stream(scopes.split("\\s+"))
-                    .anyMatch("https://www.googleapis.com/auth/calendar.events"::equals);
-            log.info("Google Calendar: diagnostico_scopes usuarioId={}, calendarEventsConcedido={}, "
-                            + "scopes={}", usuarioId, permiteEventos,
-                    scopes.isBlank() ? "no_informados" : limitarTexto(scopes));
-        } catch (IOException e) {
-            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=IO",
-                    usuarioId);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=interrumpido",
-                    usuarioId);
-        } catch (RuntimeException e) {
-            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=error",
-                    usuarioId);
-        }
-    }
-
-    /**
-     * Diagnostico temporal de acceso usando exactamente el token del sincronizador.
-     * Un 403 en calendarList puede deberse al scope calendar.events y NO prueba
-     * ausencia de permiso de escritura. No cambia la sincronizacion.
-     */
-    private void diagnosticarAccesoCalendario(String accessToken, Long usuarioId,
-                                             String calendarId) {
-        consultarAccesoGoogle("CALENDAR_GET", API_URL + encode(calendarId),
-                accessToken, usuarioId, false);
-        consultarAccesoGoogle("CALENDAR_LIST_GET",
-                "https://www.googleapis.com/calendar/v3/users/me/calendarList/"
-                        + encode(calendarId), accessToken, usuarioId, true);
-        // events.list admite el scope calendar.events ya concedido. Es la prueba
-        // de lectura mas util sin solicitar nuevos permisos OAuth.
-        consultarAccesoGoogle("EVENTS_LIST_GET", urlEventos(calendarId)
-                        + "?maxResults=1", accessToken, usuarioId, false);
-    }
-
-    private void consultarAccesoGoogle(String etapa, String url,
-                                     String accessToken, Long usuarioId,
-                                     boolean incluirRol) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(15))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET().build();
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                if (incluirRol) {
-                    String rol = objectMapper.readTree(response.body())
-                            .path("accessRole").asText("no_informado");
-                    if (!java.util.List.of("owner", "writer", "reader", "freeBusyReader")
-                            .contains(rol)) {
-                        rol = "desconocido";
-                    }
-                    log.info("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, HTTP=200, accessRole={}",
-                            etapa, usuarioId, rol);
-                } else {
-                    log.info("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, HTTP=200",
-                            etapa, usuarioId);
-                }
-            } else {
-                log.warn("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, HTTP={}, error={}",
-                        etapa, usuarioId, response.statusCode(),
-                        detalleSeguro(response.body()));
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, interrumpido",
-                    etapa, usuarioId);
-        } catch (IOException | RuntimeException e) {
-            log.warn("Google Calendar: diagnostico_acceso etapa={}, usuarioId={}, no_disponible",
-                    etapa, usuarioId);
         }
     }
 
@@ -443,65 +335,15 @@ public class GoogleCalendarSyncService {
         }
     }
 
-    /**
-     * Diagnóstico del JSON REAL que se envía. Solo imprime el cuerpo si tiene
-     * exclusivamente los campos públicos y constantes que genera esta clase.
-     * Si hay un campo inesperado, registra únicamente tamaño y huella SHA-256.
-     * Nunca registra Authorization ni tokens.
-     */
-    private void diagnosticarSolicitud(String etapa, Long turnoId, Long usuarioId,
-                                     String url, String body) {
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        String huella;
-        try {
-            huella = HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(bytes));
-        } catch (NoSuchAlgorithmException e) {
-            huella = "no_disponible";
-        }
-        String cuerpoSeguro = "OMITIDO_POR_PRIVACIDAD";
-        try {
-            JsonNode root = objectMapper.readTree(body);
-            boolean camposEsperados = root.isObject()
-                    && soloCamposEsperados(root)
-                    && EVENT_TITLE.equals(root.path("summary").asText())
-                    && EVENT_DESCRIPTION.equals(root.path("description").asText())
-                    && camposFechaSeguros(root.path("start"))
-                    && camposFechaSeguros(root.path("end"))
-                    && (!root.has("id") || root.path("id").asText().matches("pulsos[0-9a-f]+a[0-9a-f]+b2026"));
-            if (camposEsperados) {
-                cuerpoSeguro = body;
-            }
-        } catch (Exception ignored) {
-            // Nunca imprimir un JSON no validado.
-        }
-        log.info("Google Calendar: diagnostico_solicitud etapa={}, turnoId={}, usuarioId={}, "
-                        + "url={}, contentType=application/json; charset=UTF-8, bytesUTF8={}, sha256={}, json={}",
-                etapa, turnoId, usuarioId, url, bytes.length, huella, cuerpoSeguro);
-    }
-
-    private boolean soloCamposEsperados(JsonNode root) {
-        var fields = root.fieldNames();
-        while (fields.hasNext()) {
-            if (!Set.of("id", "summary", "description", "start", "end").contains(fields.next())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean camposFechaSeguros(JsonNode fecha) {
-        if (!fecha.isObject() || !fecha.hasNonNull("dateTime") || !fecha.hasNonNull("timeZone")) {
-            return false;
-        }
-        var fields = fecha.fieldNames();
-        while (fields.hasNext()) {
-            if (!Set.of("dateTime", "timeZone").contains(fields.next())) {
-                return false;
-            }
-        }
-        return fecha.path("dateTime").asText().matches("[0-9T:+.\\-Z]+")
-                && "America/Argentina/Buenos_Aires".equals(fecha.path("timeZone").asText());
+    /** Registro visible incluso si el nivel INFO está filtrado. Sin datos clínicos. */
+    private void registrarSolicitud(String etapa, Long turnoId, Long usuarioId,
+                                   String calendarId, ObjectNode evento) {
+        String inicio = evento.path("start").path("dateTime").asText("ausente");
+        String fin = evento.path("end").path("dateTime").asText("ausente");
+        log.warn("Google Calendar: SOLICITUD_SALIENTE etapa={}, turnoId={}, usuarioId={}, "
+                        + "calendarPrimary={}, tieneId={}, inicio={}, fin={}, zona={}",
+                etapa, turnoId, usuarioId, "primary".equals(calendarId),
+                evento.hasNonNull("id"), inicio, fin, zoneId.getId());
     }
 
     private ObjectNode construirEvento(Turno turno) {

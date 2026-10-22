@@ -181,6 +181,11 @@
         .estado-pendiente { background: #F7EFE4; color: #8A5F20; }
         .estado-atendido { background: #E4F7EB; color: var(--verde-ok); }
         .estado-cancelado { background: #F7E4E4; color: #8A2020; }
+        @media (max-width: 850px) {
+            .container { grid-template-columns: 1fr; }
+            header { flex-wrap: wrap; gap: 15px; }
+            nav a { display: inline-block; margin-bottom: 8px; }
+        }
     </style>
 </head>
 <body>
@@ -206,12 +211,12 @@
 <div class="container">
     <div>
         <div class="panel">
-            <h2 class="panel-title">Agendar Turno</h2>
-            <form th:action="@{/turnos/agendar}" th:object="${nuevoTurno}" method="post">
+            <h2 class="panel-title" th:text="${modoEdicion} ? 'Editar Turno' : 'Agendar Turno'">Agendar Turno</h2>
+            <form th:action="${modoEdicion} ? @{/turnos/{id}/editar(id=${turnoEditandoId})} : @{/turnos/agendar}" th:object="${nuevoTurno}" method="post">
                 <label>Paciente *</label>
                 <select name="pacienteId" required>
                     <option value="">Seleccione Paciente...</option>
-                    <option th:each="p : ${pacientes}" th:value="${p.id}" th:text="${p.nombreCompleto + ' (DNI ' + p.dni + ')'}"></option>
+                    <option th:each="p : ${pacientes}" th:value="${p.id}" th:text="${p.nombreCompleto + ' (DNI ' + p.dni + ')'}" th:selected="${modoEdicion and nuevoTurno.paciente != null and nuevoTurno.paciente.id == p.id}"></option>
                 </select>
 
                 <label>Médico Especialista *</label>
@@ -226,7 +231,8 @@
                 <label>Motivo de la Cita</label>
                 <input type="text" th:field="*{motivo}" placeholder="Ej. Chequeo semestral, dolor articular...">
 
-                <button type="submit" class="btn" style="width: 100%;">Confirmar Turno</button>
+                <button type="submit" class="btn" style="width: 100%;" th:text="${modoEdicion} ? 'Guardar Cambios' : 'Confirmar Turno'">Confirmar Turno</button>
+                <a th:if="${modoEdicion}" th:href="@{/turnos}" class="btn btn-outline" style="width: 100%; margin-top: 10px;">Cancelar Edición</a>
             </form>
         </div>
 
@@ -238,18 +244,15 @@
                 Conecta tu agenda directamente con <b>Google Calendar, iPhone o Outlook</b> para recibir recordatorios en tu celular.
             </p>
 
+            <div th:if="${googleCalendarExito}" th:text="${googleCalendarExito}" style="color:#315a40;margin-bottom:10px;"></div>
+            <div th:if="${googleCalendarError}" th:text="${googleCalendarError}" style="color:#a33434;margin-bottom:10px;"></div>
+            <a th:href="@{/google/calendar/conectar}" class="btn" style="display:block;text-align:center;width:100%;margin-bottom:10px;">Conectar Google Calendar</a>
             <a th:if="${usuarioActual != null}"
                th:href="@{/api/calendario/medico/{id}/turnos.ics(id=${usuarioActual.username})}" 
                class="btn btn-outline" style="width: 100%; font-size: 0.75rem; text-align: center; margin-bottom: 8px;">
                📲 Descargar Feed iCal (.ics)
             </a>
 
-            <div style="font-size: 0.72rem; color: var(--texto-secundario); background: #FFF; padding: 8px; border-radius: 4px; border: 1px solid var(--arena-linea);">
-                <b>URL de suscripción en vivo:</b><br>
-                <span style="word-break: break-all; color: var(--verde-primario);" 
-                      th:text="${'http://localhost:8080/api/calendario/medico/' + (usuarioActual != null ? usuarioActual.username : 'medico') + '/turnos.ics'}">
-                </span>
-            </div>
         </div>
     </div>
 
@@ -272,14 +275,8 @@
                               th:text="${t.estado}">ESTADO</span>
                     </div>
 
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <a th:href="'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Cita+Pulsos:+' + ${t.paciente.nombreCompleto} + '&details=Motivo:+' + ${t.motivo} + '+-+Tel:+' + ${t.paciente.telefono} + '&location=Pulsos+Medicina+%26+Bienestar&dates=' + ${#temporals.format(t.fechaHora, 'yyyyMMdd''T''HHmmss')} + '/' + ${#temporals.format(t.fechaHora.plusMinutes(45), 'yyyyMMdd''T''HHmmss')}"
-                           target="_blank" 
-                           class="btn btn-outline" 
-                           style="padding: 4px 8px; font-size: 0.72rem; background: #FFF;" 
-                           title="Agregar este turno específico a Google Calendar">
-                           🗓️ Google Cal
-                        </a>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+
 
                         <form th:action="@{/turnos/{id}/estado(id=${t.id})}" method="post" style="display:inline;">
                             <select name="estado" onchange="this.form.submit()" style="padding: 4px 8px; font-size: 0.72rem; width: auto; margin-bottom: 0;">
@@ -291,6 +288,10 @@
                         </form>
 
                         <a th:href="@{/pacientes/{id}(id=${t.paciente.id})}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.72rem;">Abrir Historia</a>
+                        <a th:href="@{/turnos/{id}/editar(id=${t.id})}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.72rem;">✏️ Editar</a>
+                        <form th:action="@{/turnos/{id}/eliminar(id=${t.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que querés eliminar este turno? Esta acción no se puede deshacer.');">
+                            <button type="submit" class="btn" style="padding: 4px 10px; font-size: 0.72rem; background: #9C4343;">🗑 Eliminar</button>
+                        </form>
                     </div>
                 </div>
             </div>

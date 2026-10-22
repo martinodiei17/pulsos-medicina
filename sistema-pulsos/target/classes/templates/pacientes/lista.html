@@ -227,6 +227,9 @@
                         <a th:href="@{/pacientes/{id}(id=${p.id})}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">Historia</a>
                         <a th:href="@{/pacientes/editar/{id}(id=${p.id})}" class="btn btn-outline" style="padding: 6px 10px; font-size: 0.75rem;" title="Editar Paciente">✏️</a>
                         <a th:href="@{/pacientes/{id}/pdf(id=${p.id})}" class="btn" style="padding: 6px 12px; font-size: 0.75rem; background: #5B6F5B;">PDF</a>
+                        <form th:action="@{/pacientes/{id}/eliminar(id=${p.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que desea eliminar este paciente? También se eliminarán su historia clínica, turnos y adjuntos.');">
+                            <button type="submit" class="btn" style="padding: 6px 10px; font-size: 0.75rem; background: #A94442;" title="Eliminar Paciente">🗑️</button>
+                        </form>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(pacientes)}">
