@@ -60,6 +60,7 @@ public class GoogleCalendarSyncService {
         this.objectMapper = objectMapper;
         this.zoneId = ZoneId.of(timeZone);
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
@@ -422,8 +423,11 @@ public class GoogleCalendarSyncService {
             } else {
                 throw new IllegalArgumentException("Método HTTP no admitido");
             }
-            return httpClient.send(builder.build(),
+            HttpResponse<String> response = httpClient.send(builder.build(),
                     HttpResponse.BodyHandlers.ofString());
+            log.info("Google Calendar: transporte metodo={}, protocolo={}, HTTP={}",
+                    metodo, response.version(), response.statusCode());
+            return response;
         } catch (IOException e) {
             throw new IllegalStateException("Error de comunicación con Google Calendar", e);
         } catch (InterruptedException e) {
