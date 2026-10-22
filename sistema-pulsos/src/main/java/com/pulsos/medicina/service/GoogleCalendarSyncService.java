@@ -9,6 +9,8 @@ import com.pulsos.medicina.model.Usuario;
 import com.pulsos.medicina.repository.GoogleCalendarCredentialRepository;
 import com.pulsos.medicina.repository.TurnoRepository;
 import com.pulsos.medicina.repository.UsuarioRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,7 @@ import java.util.List;
 @Service
 public class GoogleCalendarSyncService {
 
+    private static final Logger log = LoggerFactory.getLogger(GoogleCalendarSyncService.class);
     private static final String API_URL =
             "https://www.googleapis.com/calendar/v3/calendars/";
     private static final String EVENT_TITLE = "Turno médico - Pulsos Medicina";
@@ -101,13 +104,11 @@ public class GoogleCalendarSyncService {
 
         Turno turno = turnoRepository.findById(job.getTurnoId()).orElse(null);
         if (turno == null || esCancelado(turno)) {
-            // La operación quedó obsoleta: no recrear un turno eliminado/cancelado.
             return;
         }
 
         Usuario medicoActual = resolverMedico(turno);
         if (medicoActual == null || !job.getUsuarioId().equals(medicoActual.getId())) {
-            // El turno fue reasignado: este trabajo pertenece al médico anterior.
             return;
         }
         sincronizarTurnoParaMedico(turno, job.getUsuarioId(), job);
@@ -122,7 +123,6 @@ public class GoogleCalendarSyncService {
         String calendarId = normalizarCalendarId(credential.getCalendarId());
         String eventId = generarEventId(usuarioId, turno.getId());
 
-        // Los IDs anteriores solo se reutilizan si pertenecen al mismo calendario.
         if (turno.getGoogleCalendarEventId() != null
                 && !turno.getGoogleCalendarEventId().isBlank()
                 && calendarId.equals(normalizarCalendarId(turno.getGoogleCalendarId()))) {
@@ -134,38 +134,43 @@ public class GoogleCalendarSyncService {
         evento.put("id", eventId);
         String body = evento.toString();
 
-        // Primero se intenta con un identificador estable para evitar duplicados.
+        // No registrar el JSON del evento ni el token en los logs.
+        log.info("Google Calendar: inicio de sincronización turnoId={}, usuarioId={}, "
+                        + "operacion={}, zonaHoraria={}, tieneIdPersistido={}",
+                turno.getId(), usuarioId,
+                job == null ? "DIRECTA" : job.getOperacion(),
+                zoneId.getId(),
+                turno.getGoogleCalendarEventId() != null
+                        && !turno.getGoogleCalendarEventId().isBlank());
+
         HttpResponse<String> response = enviar("POST",
                 urlEventos(calendarId), accessToken, body);
+        logRespuesta("POST_CON_ID", turno.getId(), usuarioId, response);
+
         if (response.statusCode() == 409) {
             response = enviar("PUT", urlEvento(calendarId, eventId),
                     accessToken, body);
+            logRespuesta("PUT_POR_CONFLICTO", turno.getId(), usuarioId, response);
         }
 
-        // Algunos calendarios rechazan IDs personalizados con HTTP 400.
-        // Solo para eventos nuevos y sin ID guardado, se prueba dejando
-        // que Google asigne el identificador. No repetir este fallback
-        // para eventos que ya tengan un ID persistido.
         boolean tieneIdGuardado = turno.getGoogleCalendarEventId() != null
                 && !turno.getGoogleCalendarEventId().isBlank();
         if (response.statusCode() == 400 && !tieneIdGuardado) {
+            log.warn("Google Calendar: primer intento HTTP 400; "
+                            + "se probará POST sin ID personalizado. turnoId={}, usuarioId={}",
+                    turno.getId(), usuarioId);
             ObjectNode eventoSinId = construirEvento(turno);
             response = enviar("POST", urlEventos(calendarId),
                     accessToken, eventoSinId.toString());
+            logRespuesta("POST_SIN_ID", turno.getId(), usuarioId, response);
         }
 
         if (!esExito(response.statusCode())) {
-            String detalle = response.body() == null ? "" : response.body();
-            detalle = detalle.replaceAll("[\r\n]+", " ");
-            if (detalle.length() > 1200) {
-                detalle = detalle.substring(0, 1200);
-            }
             throw new IllegalStateException(
                     "Google Calendar rechazó el guardado. HTTP "
-                            + response.statusCode() + " - " + detalle);
+                            + response.statusCode() + " - " + detalleSeguro(response.body()));
         }
 
-        // El ID real puede ser distinto si Google lo generó.
         try {
             String idRespuesta = objectMapper.readTree(response.body())
                     .path("id").asText("");
@@ -177,8 +182,6 @@ public class GoogleCalendarSyncService {
                     "Google creó el evento pero no se pudo leer su identificador", e);
         }
 
-        // No volver a asignar IDs de un médico anterior si el turno cambió
-        // mientras Google procesaba la petición.
         Turno actual = turnoRepository.findById(turno.getId()).orElse(null);
         if (actual != null && !esCancelado(actual)) {
             Usuario medicoActual = resolverMedico(actual);
@@ -188,6 +191,49 @@ public class GoogleCalendarSyncService {
                 turnoRepository.save(actual);
             }
         }
+    }
+
+    /** Registra solo el código y el error de Google, nunca datos clínicos ni tokens. */
+    private void logRespuesta(String etapa, Long turnoId, Long usuarioId,
+                             HttpResponse<String> response) {
+        if (esExito(response.statusCode())) {
+            log.info("Google Calendar: etapa={}, turnoId={}, usuarioId={}, HTTP={}",
+                    etapa, turnoId, usuarioId, response.statusCode());
+        } else {
+            log.warn("Google Calendar: etapa={}, turnoId={}, usuarioId={}, HTTP={}, error={}",
+                    etapa, turnoId, usuarioId, response.statusCode(),
+                    detalleSeguro(response.body()));
+        }
+    }
+
+    /** Solo incluye campos de error de la API; no vuelca la respuesta íntegra. */
+    private String detalleSeguro(String body) {
+        if (body == null || body.isBlank()) {
+            return "Sin detalle de Google";
+        }
+        try {
+            var root = objectMapper.readTree(body);
+            var error = root.path("error");
+            String code = error.path("code").asText("");
+            String reason = "";
+            var errors = error.path("errors");
+            if (errors.isArray() && !errors.isEmpty()) {
+                reason = errors.get(0).path("reason").asText("");
+            }
+            String message = error.path("message").asText("");
+            if (!code.isBlank() || !reason.isBlank() || !message.isBlank()) {
+                return limitarTexto("code=" + code + ", reason=" + reason
+                        + ", message=" + message);
+            }
+        } catch (IOException ignored) {
+            // No imprimir el cuerpo sin procesar si la API responde algo inesperado.
+        }
+        return "Google devolvió una respuesta de error sin detalle estructurado";
+    }
+
+    private String limitarTexto(String value) {
+        String limpio = value.replaceAll("[\\r\\n]+", " ");
+        return limpio.length() > 500 ? limpio.substring(0, 500) : limpio;
     }
 
     /** Elimina el evento de un turno que todavía existe localmente. */
@@ -294,7 +340,6 @@ public class GoogleCalendarSyncService {
     }
 
     private String generarEventId(Long usuarioId, Long turnoId) {
-        // Google admite caracteres base32hex: 0-9 y a-v.
         return "pulsos" + Long.toHexString(usuarioId)
                 + "a" + Long.toHexString(turnoId) + "b2026";
     }
