@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class GoogleCalendarSyncService {
@@ -131,26 +130,32 @@ public class GoogleCalendarSyncService {
         }
 
         String accessToken = oauthService.obtenerAccessToken(usuarioId);
-        String body;
-        try {
-            ObjectNode evento = construirEvento(turno);
-            evento.put("id", eventId);
-            body = objectMapper.writeValueAsString(evento);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo preparar el evento", e);
-        }
+        ObjectNode evento = construirEvento(turno);
+        evento.put("id", eventId);
+        String body = evento.toString();
 
-        // POST con ID estable: si ya existe, PUT. No hay recursión entre ambos.
+        // Primero se intenta con un identificador estable para evitar duplicados.
         HttpResponse<String> response = enviar("POST",
                 urlEventos(calendarId), accessToken, body);
         if (response.statusCode() == 409) {
             response = enviar("PUT", urlEvento(calendarId, eventId),
                     accessToken, body);
         }
+
+        // Algunos calendarios rechazan IDs personalizados con HTTP 400.
+        // Solo para eventos nuevos y sin ID guardado, se prueba dejando
+        // que Google asigne el identificador. No repetir este fallback
+        // para eventos que ya tengan un ID persistido.
+        boolean tieneIdGuardado = turno.getGoogleCalendarEventId() != null
+                && !turno.getGoogleCalendarEventId().isBlank();
+        if (response.statusCode() == 400 && !tieneIdGuardado) {
+            ObjectNode eventoSinId = construirEvento(turno);
+            response = enviar("POST", urlEventos(calendarId),
+                    accessToken, eventoSinId.toString());
+        }
+
         if (!esExito(response.statusCode())) {
             String detalle = response.body() == null ? "" : response.body();
-            // La respuesta de error de Google explica el motivo del HTTP 400.
-            // No registrar credenciales ni el token de acceso.
             detalle = detalle.replaceAll("[\r\n]+", " ");
             if (detalle.length() > 1200) {
                 detalle = detalle.substring(0, 1200);
@@ -158,6 +163,18 @@ public class GoogleCalendarSyncService {
             throw new IllegalStateException(
                     "Google Calendar rechazó el guardado. HTTP "
                             + response.statusCode() + " - " + detalle);
+        }
+
+        // El ID real puede ser distinto si Google lo generó.
+        try {
+            String idRespuesta = objectMapper.readTree(response.body())
+                    .path("id").asText("");
+            if (!idRespuesta.isBlank()) {
+                eventId = idRespuesta;
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Google creó el evento pero no se pudo leer su identificador", e);
         }
 
         // No volver a asignar IDs de un médico anterior si el turno cambió
