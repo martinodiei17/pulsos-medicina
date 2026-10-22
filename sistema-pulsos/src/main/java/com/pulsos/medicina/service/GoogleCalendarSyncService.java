@@ -130,6 +130,7 @@ public class GoogleCalendarSyncService {
         }
 
         String accessToken = oauthService.obtenerAccessToken(usuarioId);
+        diagnosticarPermisosGoogle(accessToken, usuarioId);
         ObjectNode evento = construirEvento(turno);
         evento.put("id", eventId);
         String body = evento.toString();
@@ -190,6 +191,48 @@ public class GoogleCalendarSyncService {
                 actual.setGoogleCalendarId(calendarId);
                 turnoRepository.save(actual);
             }
+        }
+    }
+
+    /**
+     * Diagnóstico temporal: comprueba los scopes concedidos al access token.
+     * El token se transmite únicamente a Google mediante HTTPS y nunca se registra.
+     * No interrumpe la sincronización si el servicio de diagnóstico falla.
+     * Retirar este diagnóstico después de resolver el problema.
+     */
+    private void diagnosticarPermisosGoogle(String accessToken, Long usuarioId) {
+        try {
+            String url = "https://oauth2.googleapis.com/tokeninfo?access_token="
+                    + encode(accessToken);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                log.warn("Google Calendar: diagnostico_scopes usuarioId={}, HTTP={}",
+                        usuarioId, response.statusCode());
+                return;
+            }
+            var json = objectMapper.readTree(response.body());
+            String scopes = json.path("scope").asText("");
+            boolean permiteEventos = java.util.Arrays.stream(scopes.split("\\s+"))
+                    .anyMatch("https://www.googleapis.com/auth/calendar.events"::equals);
+            log.info("Google Calendar: diagnostico_scopes usuarioId={}, calendarEventsConcedido={}, "
+                            + "scopes={}", usuarioId, permiteEventos,
+                    scopes.isBlank() ? "no_informados" : limitarTexto(scopes));
+        } catch (IOException e) {
+            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=IO",
+                    usuarioId);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=interrumpido",
+                    usuarioId);
+        } catch (RuntimeException e) {
+            log.warn("Google Calendar: diagnostico_scopes usuarioId={}, no_disponible=error",
+                    usuarioId);
         }
     }
 
