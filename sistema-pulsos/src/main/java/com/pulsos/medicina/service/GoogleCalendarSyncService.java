@@ -148,9 +148,16 @@ public class GoogleCalendarSyncService {
                     accessToken, body);
         }
         if (!esExito(response.statusCode())) {
+            String detalle = response.body() == null ? "" : response.body();
+            // La respuesta de error de Google explica el motivo del HTTP 400.
+            // No registrar credenciales ni el token de acceso.
+            detalle = detalle.replaceAll("[\r\n]+", " ");
+            if (detalle.length() > 1200) {
+                detalle = detalle.substring(0, 1200);
+            }
             throw new IllegalStateException(
                     "Google Calendar rechazó el guardado. HTTP "
-                            + response.statusCode());
+                            + response.statusCode() + " - " + detalle);
         }
 
         // No volver a asignar IDs de un médico anterior si el turno cambió
