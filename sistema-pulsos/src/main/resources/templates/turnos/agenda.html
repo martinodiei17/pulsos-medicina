@@ -246,7 +246,8 @@
 
             <div th:if="${googleCalendarExito}" th:text="${googleCalendarExito}" style="color:#315a40;margin-bottom:10px;"></div>
             <div th:if="${googleCalendarError}" th:text="${googleCalendarError}" style="color:#a33434;margin-bottom:10px;"></div>
-            <a th:href="@{/google/calendar/conectar}" class="btn" style="display:block;text-align:center;width:100%;margin-bottom:10px;">Conectar Google Calendar</a>
+            <a id="google-calendar-conectar" th:href="@{/google/calendar/conectar}" class="btn" style="display:block;text-align:center;width:100%;margin-bottom:10px;">Conectar Google Calendar</a>
+            <div id="google-calendar-conectado" role="status" style="display:none;text-align:center;width:100%;margin-bottom:10px;padding:10px 12px;border:1px solid var(--verde-ok);border-radius:5px;background:#E4F7EB;color:var(--verde-ok);font-size:0.8rem;font-weight:600;letter-spacing:0.5px;">✓ Google Calendar conectado</div>
             <a th:if="${usuarioActual != null}"
                th:href="@{/api/calendario/medico/{id}/turnos.ics(id=${usuarioActual.username})}" 
                class="btn btn-outline" style="width: 100%; font-size: 0.75rem; text-align: center; margin-bottom: 8px;">
@@ -303,5 +304,36 @@
     </div>
 </div>
 
+
+<script>
+(function () {
+    const conectar = document.getElementById('google-calendar-conectar');
+    const conectado = document.getElementById('google-calendar-conectado');
+    if (!conectar || !conectado) return;
+
+    fetch('/google/calendar/estado', { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (respuesta) {
+            if (!respuesta.ok) throw new Error('No se pudo consultar el estado');
+            return respuesta.text();
+        })
+        .then(function (texto) {
+            const estado = texto.trim();
+            let estaConectado = estado === 'CONECTADO';
+            if (!estaConectado && estado.startsWith('{')) {
+                try {
+                    const datos = JSON.parse(estado);
+                    estaConectado = datos.estado === 'CONECTADO' || datos.conectado === true;
+                } catch (e) { /* Mantener botón original si la respuesta es desconocida. */ }
+            }
+            if (estaConectado) {
+                conectar.style.display = 'none';
+                conectado.style.display = 'block';
+            }
+        })
+        .catch(function () {
+            // Ante cualquier error, conservar el botón original.
+        });
+})();
+</script>
 </body>
 </html>
