@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -36,6 +37,9 @@ public class GoogleCalendarSyncService {
     private static final String EVENT_DESCRIPTION =
             "Turno programado desde Pulsos Medicina.";
     private static final int DURATION_MINUTES = 45;
+    // RFC 3339 con segundos obligatorios, incluso cuando valen 00.
+    private static final DateTimeFormatter GOOGLE_DATE_TIME =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ssXXX");
 
     private final GoogleCalendarOAuthService oauthService;
     private final GoogleCalendarCredentialRepository credentialRepository;
@@ -341,9 +345,13 @@ public class GoogleCalendarSyncService {
         String inicio = evento.path("start").path("dateTime").asText("ausente");
         String fin = evento.path("end").path("dateTime").asText("ausente");
         log.warn("Google Calendar: SOLICITUD_SALIENTE etapa={}, turnoId={}, usuarioId={}, "
-                        + "calendarPrimary={}, tieneId={}, inicio={}, fin={}, zona={}",
+                        + "calendarPrimary={}, tieneId={}, inicio={}, fin={}, zona={}, "
+                        + "tieneResumen={}, tieneDescripcion={}, inicioConSegundos={}, finConSegundos={}",
                 etapa, turnoId, usuarioId, "primary".equals(calendarId),
-                evento.hasNonNull("id"), inicio, fin, zoneId.getId());
+                evento.hasNonNull("id"), inicio, fin, zoneId.getId(),
+                evento.hasNonNull("summary"), evento.hasNonNull("description"),
+                inicio.matches(".*T\\d{2}:\\d{2}:\\d{2}.*"),
+                fin.matches(".*T\\d{2}:\\d{2}:\\d{2}.*"));
     }
 
     private ObjectNode construirEvento(Turno turno) {
@@ -353,10 +361,10 @@ public class GoogleCalendarSyncService {
         evento.put("summary", EVENT_TITLE);
         evento.put("description", EVENT_DESCRIPTION);
         ObjectNode start = evento.putObject("start");
-        start.put("dateTime", inicio.toOffsetDateTime().toString());
+        start.put("dateTime", GOOGLE_DATE_TIME.format(inicio));
         start.put("timeZone", zoneId.getId());
         ObjectNode end = evento.putObject("end");
-        end.put("dateTime", fin.toOffsetDateTime().toString());
+        end.put("dateTime", GOOGLE_DATE_TIME.format(fin));
         end.put("timeZone", zoneId.getId());
         return evento;
     }
