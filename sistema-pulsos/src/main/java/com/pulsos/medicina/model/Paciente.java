@@ -50,6 +50,13 @@ public class Paciente {
     @OrderBy("fechaHora ASC")
     private List<Turno> turnos = new ArrayList<>();
 
+    @Column(columnDefinition = "TEXT")
+    private String antecedentesFamiliares;
+    @Column(columnDefinition = "TEXT")
+    private String antecedentesQuirurgicos;
+    @Column(columnDefinition = "TEXT")
+    private String medicacionHabitual;
+
     public Paciente() {}
 
     public Integer getEdad() {
@@ -132,4 +139,10 @@ public class Paciente {
     public void setTurnos(List<Turno> turnos) {
         this.turnos = turnos;
     }
+    public String getAntecedentesFamiliares() { return antecedentesFamiliares; }
+    public void setAntecedentesFamiliares(String value) { this.antecedentesFamiliares = value; }
+    public String getAntecedentesQuirurgicos() { return antecedentesQuirurgicos; }
+    public void setAntecedentesQuirurgicos(String value) { this.antecedentesQuirurgicos = value; }
+    public String getMedicacionHabitual() { return medicacionHabitual; }
+    public void setMedicacionHabitual(String value) { this.medicacionHabitual = value; }
 }

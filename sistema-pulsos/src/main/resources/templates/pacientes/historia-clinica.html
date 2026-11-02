@@ -547,6 +547,12 @@
 
             <div class="info-label">Antecedentes Clínicos</div>
             <p style="font-size: 0.85rem; color: #4A504A; line-height: 1.5;" th:text="${paciente.antecedentesMedicos != null && !paciente.antecedentesMedicos.isEmpty() ? paciente.antecedentesMedicos : 'Sin antecedentes previos.'}">Sin antecedentes.</p>
+                        <div class="info-label" style="margin-top:12px">Antecedentes familiares</div>
+            <p style="font-size:0.85rem; white-space:pre-wrap" th:text="${paciente.antecedentesFamiliares != null && !paciente.antecedentesFamiliares.isEmpty() ? paciente.antecedentesFamiliares : 'Sin registrar'}"></p>
+            <div class="info-label" style="margin-top:12px">Antecedentes quirúrgicos</div>
+            <p style="font-size:0.85rem; white-space:pre-wrap" th:text="${paciente.antecedentesQuirurgicos != null && !paciente.antecedentesQuirurgicos.isEmpty() ? paciente.antecedentesQuirurgicos : 'Sin registrar'}"></p>
+            <div class="info-label" style="margin-top:12px">Medicación habitual</div>
+            <p style="font-size:0.85rem; white-space:pre-wrap" th:text="${paciente.medicacionHabitual != null && !paciente.medicacionHabitual.isEmpty() ? paciente.medicacionHabitual : 'Sin registrar'}"></p>
         </div>
     </aside>
 
@@ -580,6 +586,32 @@
 
                 <label class="info-label">Plan Terapéutico / Indicaciones / Receta</label>
                 <textarea th:field="*{tratamiento}" rows="2" placeholder="Prescripciones, dosis o estudios solicitados..."></textarea>
+
+
+                <h4 style="color:var(--verde-primario);margin:16px 0 10px">Historia clínica ampliada</h4>
+                <label class="info-label">Enfermedad actual</label>
+                <textarea th:field="*{enfermedadActual}" rows="2"></textarea>
+                <label class="info-label">Examen físico</label>
+                <textarea th:field="*{examenFisico}" rows="2"></textarea>
+                <label class="info-label">Diagnósticos secundarios</label>
+                <textarea th:field="*{diagnosticosSecundarios}" rows="2"></textarea>
+                <label class="info-label">Evolución clínica</label>
+                <textarea th:field="*{evolucion}" rows="2"></textarea>
+                <label class="info-label">Plan de seguimiento</label>
+                <textarea th:field="*{planSeguimiento}" rows="2"></textarea>
+                <h4 style="color:var(--verde-primario);margin:16px 0 10px">Signos vitales de esta consulta</h4>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:15px">
+                    <div><label class="info-label">Presión sistólica (mmHg)</label><input type="number" th:field="*{presionSistolica}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Presión diastólica (mmHg)</label><input type="number" th:field="*{presionDiastolica}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Frecuencia cardíaca (lpm)</label><input type="number" th:field="*{frecuenciaCardiaca}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Frecuencia respiratoria (rpm)</label><input type="number" th:field="*{frecuenciaRespiratoria}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Saturación O₂ (%)</label><input type="number" th:field="*{saturacionOxigeno}" class="custom-text-input" min="0" max="100" step="1"></div>
+                    <div><label class="info-label">Peso (kg)</label><input type="number" th:field="*{pesoKg}" class="custom-text-input" min="0" step="0.1"></div>
+                    <div><label class="info-label">Talla (cm)</label><input type="number" th:field="*{tallaCm}" class="custom-text-input" min="0" step="0.1"></div>
+                    <div><label class="info-label">Temperatura (°C)</label><input type="number" th:field="*{temperaturaC}" class="custom-text-input" min="0" step="0.1"></div>
+                </div>
+                <label class="info-label">Próximo control</label>
+                <input type="date" th:field="*{proximoControl}" class="custom-text-input" style="max-width:250px">
 
                 <div style="text-align: right; display:flex; justify-content:flex-end; gap:8px;">
                     <a th:if="${consultaEditando != null}" th:href="@{/pacientes/{id}(id=${paciente.id})}" class="btn btn-outline">Cancelar edición</a>
@@ -696,6 +728,20 @@
                     <span class="info-label">Plan Terapéutico / Indicaciones:</span>
                     <p style="font-size: 0.85rem; margin-top: 2px;" th:text="${c.tratamiento}">Detalle</p>
                 </div>
+                <div th:if="${c.enfermedadActual != null && !c.enfermedadActual.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Enfermedad actual: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.enfermedadActual}"></span></div>
+                <div th:if="${c.examenFisico != null && !c.examenFisico.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Examen físico: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.examenFisico}"></span></div>
+                <div th:if="${c.diagnosticosSecundarios != null && !c.diagnosticosSecundarios.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Diagnósticos secundarios: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.diagnosticosSecundarios}"></span></div>
+                <div th:if="${c.evolucion != null && !c.evolucion.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Evolución clínica: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.evolucion}"></span></div>
+                <div th:if="${c.planSeguimiento != null && !c.planSeguimiento.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Plan de seguimiento: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.planSeguimiento}"></span></div>
+                <div th:if="${c.presionSistolica != null}" style="margin-bottom:7px"><span class="info-label">Presión sistólica (mmHg): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.presionSistolica}"></span></div>
+                <div th:if="${c.presionDiastolica != null}" style="margin-bottom:7px"><span class="info-label">Presión diastólica (mmHg): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.presionDiastolica}"></span></div>
+                <div th:if="${c.frecuenciaCardiaca != null}" style="margin-bottom:7px"><span class="info-label">Frecuencia cardíaca (lpm): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.frecuenciaCardiaca}"></span></div>
+                <div th:if="${c.frecuenciaRespiratoria != null}" style="margin-bottom:7px"><span class="info-label">Frecuencia respiratoria (rpm): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.frecuenciaRespiratoria}"></span></div>
+                <div th:if="${c.saturacionOxigeno != null}" style="margin-bottom:7px"><span class="info-label">Saturación O₂ (%): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.saturacionOxigeno}"></span></div>
+                <div th:if="${c.pesoKg != null}" style="margin-bottom:7px"><span class="info-label">Peso (kg): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.pesoKg}"></span></div>
+                <div th:if="${c.tallaCm != null}" style="margin-bottom:7px"><span class="info-label">Talla (cm): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.tallaCm}"></span></div>
+                <div th:if="${c.temperaturaC != null}" style="margin-bottom:7px"><span class="info-label">Temperatura (°C): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.temperaturaC}"></span></div>
+                <div th:if="${c.proximoControl != null}" style="margin-bottom:7px"><span class="info-label">Próximo control: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.proximoControl}"></span></div>
                 <div sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')" style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--arena-linea);">
                     <a th:href="@{/pacientes/{id}/consultas/{consultaId}/editar(id=${paciente.id},consultaId=${c.id})}" class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem;">✏️ Editar</a>
                     <form th:action="@{/pacientes/{id}/consultas/{consultaId}/eliminar(id=${paciente.id},consultaId=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que desea eliminar esta evolución de la historia clínica?');">
