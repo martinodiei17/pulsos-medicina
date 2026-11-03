@@ -92,6 +92,9 @@ public class PacienteService {
                     paciente.getAntecedentesMedicos()
             );
             existente.setAlergias(paciente.getAlergias());
+            existente.setAntecedentesFamiliares(paciente.getAntecedentesFamiliares());
+            existente.setAntecedentesQuirurgicos(paciente.getAntecedentesQuirurgicos());
+            existente.setMedicacionHabitual(paciente.getMedicacionHabitual());
 
             return pacienteRepo.save(existente);
         }
@@ -187,6 +190,20 @@ public class PacienteService {
         consulta.setMotivo(datos.getMotivo());
         consulta.setDiagnostico(datos.getDiagnostico());
         consulta.setTratamiento(datos.getTratamiento());
+        consulta.setEnfermedadActual(datos.getEnfermedadActual());
+        consulta.setExamenFisico(datos.getExamenFisico());
+        consulta.setDiagnosticosSecundarios(datos.getDiagnosticosSecundarios());
+        consulta.setEvolucion(datos.getEvolucion());
+        consulta.setPlanSeguimiento(datos.getPlanSeguimiento());
+        consulta.setPresionSistolica(datos.getPresionSistolica());
+        consulta.setPresionDiastolica(datos.getPresionDiastolica());
+        consulta.setFrecuenciaCardiaca(datos.getFrecuenciaCardiaca());
+        consulta.setFrecuenciaRespiratoria(datos.getFrecuenciaRespiratoria());
+        consulta.setSaturacionOxigeno(datos.getSaturacionOxigeno());
+        consulta.setPesoKg(datos.getPesoKg());
+        consulta.setTallaCm(datos.getTallaCm());
+        consulta.setTemperaturaC(datos.getTemperaturaC());
+        consulta.setProximoControl(datos.getProximoControl());
 
         consultaRepo.save(consulta);
     }

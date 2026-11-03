@@ -491,6 +491,54 @@
             font-size: 0.85rem;
             margin-bottom: 12px;
         }
+
+        /* Secciones plegables de Historia Clínica 2.0 */
+        .hc-grupo {
+            border: 1px solid var(--arena-linea);
+            border-radius: 7px;
+            background: #FFFFFF;
+            margin: 14px 0;
+            overflow: hidden;
+        }
+        .hc-grupo > summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            background: var(--verde-tenue);
+            color: var(--verde-primario);
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+        }
+        .hc-grupo > summary::-webkit-details-marker { display: none; }
+        .hc-grupo > summary:focus-visible {
+            outline: 2px solid var(--verde-primario);
+            outline-offset: -2px;
+        }
+        .hc-grupo[open] > summary { border-bottom: 1px solid var(--arena-linea); }
+        .hc-indicador::before { content: '+'; font-size: 1.35rem; line-height: 1; }
+        .hc-grupo[open] .hc-indicador::before { content: '−'; }
+        .hc-grupo-contenido { padding: 16px; }
+
+        /* Historial cronológico: cada evolución se abre individualmente */
+        .hc-consulta { padding: 0; overflow: hidden; }
+        .hc-consulta-resumen {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; padding: 14px 18px; cursor: pointer;
+            list-style: none; color: var(--texto-oscuro);
+        }
+        .hc-consulta-resumen::-webkit-details-marker { display: none; }
+        .hc-consulta-resumen:focus-visible { outline: 2px solid var(--verde-primario); outline-offset: -2px; }
+        .hc-consulta-datos { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; min-width: 0; }
+        .hc-consulta-datos strong { color: var(--verde-primario); font-size: 0.84rem; }
+        .hc-consulta-fecha { font-size: 0.78rem; color: var(--texto-secundario); }
+        .hc-consulta-motivo { flex-basis: 100%; font-size: 0.85rem; }
+        .hc-consulta-resumen .hc-indicador { flex-shrink: 0; color: var(--verde-primario); }
+        .hc-consulta-contenido { padding: 15px 18px; border-top: 1px dashed var(--arena-linea); }
     </style>
 </head>
 <body>
@@ -547,6 +595,12 @@
 
             <div class="info-label">Antecedentes Clínicos</div>
             <p style="font-size: 0.85rem; color: #4A504A; line-height: 1.5;" th:text="${paciente.antecedentesMedicos != null && !paciente.antecedentesMedicos.isEmpty() ? paciente.antecedentesMedicos : 'Sin antecedentes previos.'}">Sin antecedentes.</p>
+                        <div class="info-label" style="margin-top:12px">Antecedentes familiares</div>
+            <p style="font-size:0.85rem; white-space:pre-wrap" th:text="${paciente.antecedentesFamiliares != null && !paciente.antecedentesFamiliares.isEmpty() ? paciente.antecedentesFamiliares : 'Sin registrar'}"></p>
+            <div class="info-label" style="margin-top:12px">Antecedentes quirúrgicos</div>
+            <p style="font-size:0.85rem; white-space:pre-wrap" th:text="${paciente.antecedentesQuirurgicos != null && !paciente.antecedentesQuirurgicos.isEmpty() ? paciente.antecedentesQuirurgicos : 'Sin registrar'}"></p>
+            <div class="info-label" style="margin-top:12px">Medicación habitual</div>
+            <p style="font-size:0.85rem; white-space:pre-wrap" th:text="${paciente.medicacionHabitual != null && !paciente.medicacionHabitual.isEmpty() ? paciente.medicacionHabitual : 'Sin registrar'}"></p>
         </div>
     </aside>
 
@@ -581,6 +635,49 @@
                 <label class="info-label">Plan Terapéutico / Indicaciones / Receta</label>
                 <textarea th:field="*{tratamiento}" rows="2" placeholder="Prescripciones, dosis o estudios solicitados..."></textarea>
 
+
+                <!-- Grupos desplegables nativos: conservan los valores al cerrarse -->
+                <details class="hc-grupo">
+                    <summary>Historia clínica ampliada <span class="hc-indicador" aria-hidden="true"></span></summary>
+                    <div class="hc-grupo-contenido">
+                <label class="info-label">Enfermedad actual</label>
+                <textarea th:field="*{enfermedadActual}" rows="2"></textarea>
+                <label class="info-label">Examen físico</label>
+                <textarea th:field="*{examenFisico}" rows="2"></textarea>
+                <label class="info-label">Diagnósticos secundarios</label>
+                <textarea th:field="*{diagnosticosSecundarios}" rows="2"></textarea>
+                <label class="info-label">Evolución clínica</label>
+                <textarea th:field="*{evolucion}" rows="2"></textarea>
+                    </div>
+                </details>
+
+                <details class="hc-grupo">
+                    <summary>Signos vitales de esta consulta <span class="hc-indicador" aria-hidden="true"></span></summary>
+                    <div class="hc-grupo-contenido">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:15px">
+                    <div><label class="info-label">Presión sistólica (mmHg)</label><input type="number" th:field="*{presionSistolica}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Presión diastólica (mmHg)</label><input type="number" th:field="*{presionDiastolica}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Frecuencia cardíaca (lpm)</label><input type="number" th:field="*{frecuenciaCardiaca}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Frecuencia respiratoria (rpm)</label><input type="number" th:field="*{frecuenciaRespiratoria}" class="custom-text-input" min="0" step="1"></div>
+                    <div><label class="info-label">Saturación O₂ (%)</label><input type="number" th:field="*{saturacionOxigeno}" class="custom-text-input" min="0" max="100" step="1"></div>
+                    <div><label class="info-label">Peso (kg)</label><input type="number" th:field="*{pesoKg}" class="custom-text-input" min="0" step="0.1"></div>
+                    <div><label class="info-label">Talla (cm)</label><input type="number" th:field="*{tallaCm}" class="custom-text-input" min="0" step="0.1"></div>
+                    <div><label class="info-label">Temperatura (°C)</label><input type="number" th:field="*{temperaturaC}" class="custom-text-input" min="0" step="0.1"></div>
+                </div>
+                    </div>
+                </details>
+
+                <details class="hc-grupo">
+                    <summary>Seguimiento médico <span class="hc-indicador" aria-hidden="true"></span></summary>
+                    <div class="hc-grupo-contenido">
+                <label class="info-label">Plan de seguimiento</label>
+                <textarea th:field="*{planSeguimiento}" rows="2"></textarea>
+                <label class="info-label">Próximo control</label>
+                <input type="date" th:field="*{proximoControl}" class="custom-text-input" style="max-width:250px">
+
+                    </div>
+                </details>
+
                 <div style="text-align: right; display:flex; justify-content:flex-end; gap:8px;">
                     <a th:if="${consultaEditando != null}" th:href="@{/pacientes/{id}(id=${paciente.id})}" class="btn btn-outline">Cancelar edición</a>
                     <button type="submit" class="btn" th:text="${consultaEditando != null} ? 'Guardar Cambios' : 'Guardar Evolución'">Guardar Evolución</button>
@@ -590,7 +687,9 @@
 
         <!-- MÓDULO DE ADJUNTOS CON DISEÑO PROFESIONAL PULSOS -->
         <div class="panel">
-            <h3 class="panel-title" style="margin-bottom: 16px;">Estudios de Imágenes & Recetas Digitales</h3>
+            <details class="hc-grupo hc-adjuntos" style="margin:0;">
+                <summary>Estudios de Imágenes & Recetas Digitales <span class="hc-indicador" aria-hidden="true"></span></summary>
+                <div class="hc-grupo-contenido">
             
             <div class="upload-bar-container" sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')">
                 <form th:action="@{/pacientes/{id}/adjuntos(id=${paciente.id})}" method="post" enctype="multipart/form-data">
@@ -673,21 +772,22 @@
             <div th:if="${#lists.isEmpty(adjuntos)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 25px 0;">
                 No hay estudios de imágenes ni recetas registradas en esta historia.
             </div>
+                </div>
+            </details>
         </div>
 
         <div class="panel">
             <h3 class="panel-title">Historial Clínico Cronológico</h3>
-            <div th:each="c : ${consultas}" class="consulta-card">
-                <div class="consulta-header">
-                    <div>
-                        <strong style="color: var(--verde-primario);" th:text="${c.medicoTratante}">Dr. Médico</strong>
-                    </div>
-                    <div th:text="${#temporals.format(c.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</div>
-                </div>
-                <div style="margin-bottom: 8px;">
-                    <span class="info-label">Motivo:</span>
-                    <span style="font-weight: 500;" th:text="${c.motivo}">Motivo</span>
-                </div>
+            <details th:each="c : ${consultas}" class="consulta-card hc-consulta">
+                <summary class="hc-consulta-resumen">
+                    <span class="hc-consulta-datos">
+                        <strong th:text="${c.medicoTratante}">Dr. Médico</strong>
+                        <span class="hc-consulta-fecha" th:text="${#temporals.format(c.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                        <span class="hc-consulta-motivo"><span class="info-label">Motivo: </span><span th:text="${c.motivo}">Motivo</span></span>
+                    </span>
+                    <span class="hc-indicador" aria-hidden="true"></span>
+                </summary>
+                <div class="hc-consulta-contenido">
                 <div th:if="${c.diagnostico != null && !c.diagnostico.isEmpty()}" style="margin-bottom: 8px;">
                     <span class="info-label">Diagnóstico:</span>
                     <p style="font-size: 0.85rem; margin-top: 2px;" th:text="${c.diagnostico}">Detalle</p>
@@ -696,6 +796,20 @@
                     <span class="info-label">Plan Terapéutico / Indicaciones:</span>
                     <p style="font-size: 0.85rem; margin-top: 2px;" th:text="${c.tratamiento}">Detalle</p>
                 </div>
+                <div th:if="${c.enfermedadActual != null && !c.enfermedadActual.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Enfermedad actual: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.enfermedadActual}"></span></div>
+                <div th:if="${c.examenFisico != null && !c.examenFisico.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Examen físico: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.examenFisico}"></span></div>
+                <div th:if="${c.diagnosticosSecundarios != null && !c.diagnosticosSecundarios.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Diagnósticos secundarios: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.diagnosticosSecundarios}"></span></div>
+                <div th:if="${c.evolucion != null && !c.evolucion.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Evolución clínica: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.evolucion}"></span></div>
+                <div th:if="${c.planSeguimiento != null && !c.planSeguimiento.isEmpty()}" style="margin-bottom:7px"><span class="info-label">Plan de seguimiento: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.planSeguimiento}"></span></div>
+                <div th:if="${c.presionSistolica != null}" style="margin-bottom:7px"><span class="info-label">Presión sistólica (mmHg): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.presionSistolica}"></span></div>
+                <div th:if="${c.presionDiastolica != null}" style="margin-bottom:7px"><span class="info-label">Presión diastólica (mmHg): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.presionDiastolica}"></span></div>
+                <div th:if="${c.frecuenciaCardiaca != null}" style="margin-bottom:7px"><span class="info-label">Frecuencia cardíaca (lpm): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.frecuenciaCardiaca}"></span></div>
+                <div th:if="${c.frecuenciaRespiratoria != null}" style="margin-bottom:7px"><span class="info-label">Frecuencia respiratoria (rpm): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.frecuenciaRespiratoria}"></span></div>
+                <div th:if="${c.saturacionOxigeno != null}" style="margin-bottom:7px"><span class="info-label">Saturación O₂ (%): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.saturacionOxigeno}"></span></div>
+                <div th:if="${c.pesoKg != null}" style="margin-bottom:7px"><span class="info-label">Peso (kg): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.pesoKg}"></span></div>
+                <div th:if="${c.tallaCm != null}" style="margin-bottom:7px"><span class="info-label">Talla (cm): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.tallaCm}"></span></div>
+                <div th:if="${c.temperaturaC != null}" style="margin-bottom:7px"><span class="info-label">Temperatura (°C): </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.temperaturaC}"></span></div>
+                <div th:if="${c.proximoControl != null}" style="margin-bottom:7px"><span class="info-label">Próximo control: </span><span style="font-size:0.85rem;white-space:pre-wrap" th:text="${c.proximoControl}"></span></div>
                 <div sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')" style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--arena-linea);">
                     <a th:href="@{/pacientes/{id}/consultas/{consultaId}/editar(id=${paciente.id},consultaId=${c.id})}" class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem;">✏️ Editar</a>
                     <form th:action="@{/pacientes/{id}/consultas/{consultaId}/eliminar(id=${paciente.id},consultaId=${c.id})}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que desea eliminar esta evolución de la historia clínica?');">
@@ -703,6 +817,7 @@
                     </form>
                 </div>
             </div>
+            </details>
             <div th:if="${#lists.isEmpty(consultas)}" style="text-align: center; color: var(--texto-secundario); font-size: 0.85rem; padding: 20px 0;">
                 Aún no se han registrado consultas médicas para este paciente.
             </div>

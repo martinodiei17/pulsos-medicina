@@ -129,6 +129,9 @@ public class PdfExportService {
             alertTable.addCell(cAntecedentes);
 
             document.add(alertTable);
+            document.add(new Paragraph("Antecedentes familiares: " + (paciente.getAntecedentesFamiliares() != null ? paciente.getAntecedentesFamiliares() : "Sin registrar"), valFont));
+            document.add(new Paragraph("Antecedentes quirúrgicos: " + (paciente.getAntecedentesQuirurgicos() != null ? paciente.getAntecedentesQuirurgicos() : "Sin registrar"), valFont));
+            document.add(new Paragraph("Medicación habitual: " + (paciente.getMedicacionHabitual() != null ? paciente.getMedicacionHabitual() : "Sin registrar"), valFont));
 
             // Evoluciones Médicas
             document.add(new Paragraph(" "));
@@ -160,6 +163,20 @@ public class PdfExportService {
                         cell.addElement(new Paragraph("Indicaciones / Tratamiento: " + c.getTratamiento(), valFont));
                     }
 
+                    if (c.getEnfermedadActual() != null && !c.getEnfermedadActual().isEmpty()) cell.addElement(new Paragraph("Enfermedad actual: " + c.getEnfermedadActual(), valFont));
+                    if (c.getExamenFisico() != null && !c.getExamenFisico().isEmpty()) cell.addElement(new Paragraph("Examen físico: " + c.getExamenFisico(), valFont));
+                    if (c.getDiagnosticosSecundarios() != null && !c.getDiagnosticosSecundarios().isEmpty()) cell.addElement(new Paragraph("Diagnósticos secundarios: " + c.getDiagnosticosSecundarios(), valFont));
+                    if (c.getEvolucion() != null && !c.getEvolucion().isEmpty()) cell.addElement(new Paragraph("Evolución clínica: " + c.getEvolucion(), valFont));
+                    if (c.getPlanSeguimiento() != null && !c.getPlanSeguimiento().isEmpty()) cell.addElement(new Paragraph("Plan de seguimiento: " + c.getPlanSeguimiento(), valFont));
+                    if (c.getPresionSistolica() != null) cell.addElement(new Paragraph("Presión sistólica (mmHg): " + c.getPresionSistolica(), valFont));
+                    if (c.getPresionDiastolica() != null) cell.addElement(new Paragraph("Presión diastólica (mmHg): " + c.getPresionDiastolica(), valFont));
+                    if (c.getFrecuenciaCardiaca() != null) cell.addElement(new Paragraph("Frecuencia cardíaca (lpm): " + c.getFrecuenciaCardiaca(), valFont));
+                    if (c.getFrecuenciaRespiratoria() != null) cell.addElement(new Paragraph("Frecuencia respiratoria (rpm): " + c.getFrecuenciaRespiratoria(), valFont));
+                    if (c.getSaturacionOxigeno() != null) cell.addElement(new Paragraph("Saturación O₂ (%): " + c.getSaturacionOxigeno(), valFont));
+                    if (c.getPesoKg() != null) cell.addElement(new Paragraph("Peso (kg): " + c.getPesoKg(), valFont));
+                    if (c.getTallaCm() != null) cell.addElement(new Paragraph("Talla (cm): " + c.getTallaCm(), valFont));
+                    if (c.getTemperaturaC() != null) cell.addElement(new Paragraph("Temperatura (°C): " + c.getTemperaturaC(), valFont));
+                    if (c.getProximoControl() != null) cell.addElement(new Paragraph("Próximo control: " + c.getProximoControl(), valFont));
                     conTable.addCell(cell);
                     document.add(conTable);
                     document.add(new Paragraph(" "));
