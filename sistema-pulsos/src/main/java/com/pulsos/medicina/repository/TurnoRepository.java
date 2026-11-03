@@ -25,5 +25,41 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
     List<Turno> findByMedicoAsignadoOrderByFechaHoraAsc(
             String medicoAsignado
     );
+
+    // DASHBOARD MEDICO - ESTADISTICAS GENERALES
+
+    long countByFechaHoraGreaterThanEqualAndFechaHoraLessThan(
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
+
+    long countByFechaHoraGreaterThanEqualAndFechaHoraLessThanAndEstadoIgnoreCase(
+            LocalDateTime inicio,
+            LocalDateTime fin,
+            String estado
+    );
+
+    // DASHBOARD MEDICO - ESTADISTICAS POR PROFESIONAL
+
+    long countByMedicoIdAndFechaHoraGreaterThanEqualAndFechaHoraLessThan(
+            Long medicoId,
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
+
+    long countByMedicoIdAndFechaHoraGreaterThanEqualAndFechaHoraLessThanAndEstadoIgnoreCase(
+            Long medicoId,
+            LocalDateTime inicio,
+            LocalDateTime fin,
+            String estado
+    );
+
+    @EntityGraph(attributePaths = {"paciente"})
+    List<Turno> findByMedicoIdAndFechaHoraGreaterThanEqualAndFechaHoraLessThanOrderByFechaHoraAsc(
+            Long medicoId,
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
+
 }
 

@@ -196,6 +196,7 @@
         <span>Medicina & Bienestar</span>
     </div>
     <nav>
+        <a th:href="@{/dashboard}">Dashboard</a>
         <a href="/turnos" class="active">Agenda de Turnos</a>
         <a href="/pacientes">Pacientes & Historias</a>
         <a href="/usuarios" sec:authorize="hasRole('ROLE_ADMIN')">👥 Profesionales / Usuarios</a>
