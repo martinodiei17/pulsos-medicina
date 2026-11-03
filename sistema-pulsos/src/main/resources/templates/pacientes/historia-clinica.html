@@ -690,7 +690,7 @@
             <details class="hc-grupo hc-adjuntos" style="margin:0;">
                 <summary>Estudios de Imágenes & Recetas Digitales <span class="hc-indicador" aria-hidden="true"></span></summary>
                 <div class="hc-grupo-contenido">
-            
+
             <div class="upload-bar-container" sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')">
                 <form th:action="@{/pacientes/{id}/adjuntos(id=${paciente.id})}" method="post" enctype="multipart/form-data">
                     <div class="upload-form-grid">
@@ -722,9 +722,9 @@
 
             <div class="docs-grid" th:if="${not #lists.isEmpty(adjuntos)}">
                 <div class="doc-card" th:each="doc : ${adjuntos}">
-                    <div class="doc-preview-box" 
+                    <div class="doc-preview-box"
                          th:onclick="abrirVisor([[${doc.id}]], [[${doc.nombreArchivoOriginal}]], [[${doc.isImage()}]], [[${doc.isPdf()}]])">
-                        
+
                         <span th:class="'doc-tag-badge ' + (${doc.tipoDocumento == 'ESTUDIO_IMAGEN'} ? 'tag-imagen' : (${doc.tipoDocumento == 'RECETA'} ? 'tag-receta' : (${doc.tipoDocumento == 'LABORATORIO'} ? 'tag-lab' : 'tag-otro')))"
                               th:text="${doc.tipoDocumento}">TIPO</span>
 
@@ -745,21 +745,21 @@
                         <div>
                             <div class="doc-title" th:text="${doc.descripcion != null && !doc.descripcion.isEmpty() ? doc.descripcion : doc.nombreArchivoOriginal}">Nombre del Estudio</div>
                             <div class="doc-meta">
-                                📅 <span th:text="${#temporals.format(doc.fechaCarga, 'dd/MM/yyyy HH:mm')}">Fecha</span> &bull; 
+                                📅 <span th:text="${#temporals.format(doc.fechaCarga, 'dd/MM/yyyy HH:mm')}">Fecha</span> &bull;
                                 💾 <span th:text="${doc.tamanioFormateado}">1.5 MB</span>
                             </div>
                         </div>
 
                         <div class="doc-actions">
-                            <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.72rem; flex: 1;" 
+                            <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.72rem; flex: 1;"
                                     th:onclick="abrirVisor([[${doc.id}]], [[${doc.nombreArchivoOriginal}]], [[${doc.isImage()}]], [[${doc.isPdf()}]])">
                                 🔍 Visor Clínico
                             </button>
                             <a th:href="@{/pacientes/archivos/{id}(id=${doc.id})}" target="_blank" download class="btn" style="padding: 5px 10px; font-size: 0.72rem; background: #6C756C;">
                                 ⬇
                             </a>
-                            <a sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')" 
-                               th:href="@{/pacientes/adjuntos/{docId}/eliminar(docId=${doc.id}, pacienteId=${paciente.id})}" 
+                            <a sec:authorize="hasAnyRole('ROLE_MEDICO', 'ROLE_ADMIN')"
+                               th:href="@{/pacientes/adjuntos/{docId}/eliminar(docId=${doc.id}, pacienteId=${paciente.id})}"
                                onclick="return confirm('¿Confirma que desea eliminar este estudio adjunto?');"
                                class="btn" style="padding: 5px 10px; font-size: 0.72rem; background: #A94442;">
                                 ✖
@@ -776,7 +776,35 @@
             </details>
         </div>
 
+
+        <!-- RECETAS ELECTRONICAS: RCTA -->
         <div class="panel">
+            <details class="hc-grupo" style="margin:0;">
+                <summary>
+                    Recetas Médicas Electrónicas
+                    <span class="hc-indicador" aria-hidden="true"></span>
+                </summary>
+                <div class="hc-grupo-contenido">
+                    <p style="font-size:.85rem;color:var(--texto-secundario);margin-bottom:16px;">
+                        Las recetas electrónicas se emiten directamente desde RCTA.
+                    </p>
+
+                    <a class="btn"
+                       href="https://rcta.me/"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        Recetar con RCTA ↗
+                    </a>
+
+                    <p style="font-size:.82rem;color:var(--texto-secundario);margin-top:16px;">
+                        Una vez emitida la receta, descargá el PDF oficial de RCTA
+                        y adjuntalo en la sección de documentos de esta historia clínica.
+                    </p>
+                </div>
+            </details>
+        </div>
+
+<div class="panel">
             <h3 class="panel-title">Historial Clínico Cronológico</h3>
             <details th:each="c : ${consultas}" class="consulta-card hc-consulta">
                 <summary class="hc-consulta-resumen">
@@ -899,7 +927,7 @@
         const modal = document.getElementById('clinicaViewerModal');
         const frame = document.getElementById('modalFrame');
         const img = document.getElementById('modalImg');
-        
+
         modal.classList.remove('modal-active');
         frame.src = '';
         img.src = '';
