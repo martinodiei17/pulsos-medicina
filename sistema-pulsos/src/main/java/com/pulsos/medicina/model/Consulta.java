@@ -28,6 +28,26 @@ public class Consulta {
     @JoinColumn(name = "paciente_id")
     private Paciente paciente;
 
+    @Column(columnDefinition = "TEXT")
+    private String enfermedadActual;
+    @Column(columnDefinition = "TEXT")
+    private String examenFisico;
+    @Column(columnDefinition = "TEXT")
+    private String diagnosticosSecundarios;
+    @Column(columnDefinition = "TEXT")
+    private String evolucion;
+    @Column(columnDefinition = "TEXT")
+    private String planSeguimiento;
+    private Integer presionSistolica;
+    private Integer presionDiastolica;
+    private Integer frecuenciaCardiaca;
+    private Integer frecuenciaRespiratoria;
+    private Integer saturacionOxigeno;
+    private java.math.BigDecimal pesoKg;
+    private java.math.BigDecimal tallaCm;
+    private java.math.BigDecimal temperaturaC;
+    private java.time.LocalDate proximoControl;
+
     public Consulta() {}
 
     public Long getId() { return id; }
@@ -46,4 +66,32 @@ public class Consulta {
     public void setMatriculaMedico(String matriculaMedico) { this.matriculaMedico = matriculaMedico; }
     public Paciente getPaciente() { return paciente; }
     public void setPaciente(Paciente paciente) { this.paciente = paciente; }
+    public String getEnfermedadActual() { return enfermedadActual; }
+    public void setEnfermedadActual(String value) { this.enfermedadActual = value; }
+    public String getExamenFisico() { return examenFisico; }
+    public void setExamenFisico(String value) { this.examenFisico = value; }
+    public String getDiagnosticosSecundarios() { return diagnosticosSecundarios; }
+    public void setDiagnosticosSecundarios(String value) { this.diagnosticosSecundarios = value; }
+    public String getEvolucion() { return evolucion; }
+    public void setEvolucion(String value) { this.evolucion = value; }
+    public String getPlanSeguimiento() { return planSeguimiento; }
+    public void setPlanSeguimiento(String value) { this.planSeguimiento = value; }
+    public Integer getPresionSistolica() { return presionSistolica; }
+    public void setPresionSistolica(Integer value) { this.presionSistolica = value; }
+    public Integer getPresionDiastolica() { return presionDiastolica; }
+    public void setPresionDiastolica(Integer value) { this.presionDiastolica = value; }
+    public Integer getFrecuenciaCardiaca() { return frecuenciaCardiaca; }
+    public void setFrecuenciaCardiaca(Integer value) { this.frecuenciaCardiaca = value; }
+    public Integer getFrecuenciaRespiratoria() { return frecuenciaRespiratoria; }
+    public void setFrecuenciaRespiratoria(Integer value) { this.frecuenciaRespiratoria = value; }
+    public Integer getSaturacionOxigeno() { return saturacionOxigeno; }
+    public void setSaturacionOxigeno(Integer value) { this.saturacionOxigeno = value; }
+    public java.math.BigDecimal getPesoKg() { return pesoKg; }
+    public void setPesoKg(java.math.BigDecimal value) { this.pesoKg = value; }
+    public java.math.BigDecimal getTallaCm() { return tallaCm; }
+    public void setTallaCm(java.math.BigDecimal value) { this.tallaCm = value; }
+    public java.math.BigDecimal getTemperaturaC() { return temperaturaC; }
+    public void setTemperaturaC(java.math.BigDecimal value) { this.temperaturaC = value; }
+    public java.time.LocalDate getProximoControl() { return proximoControl; }
+    public void setProximoControl(java.time.LocalDate value) { this.proximoControl = value; }
 }
